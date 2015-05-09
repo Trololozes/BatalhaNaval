@@ -50,7 +50,7 @@ Teste: será executado através de um robô cliente de teste que irá interagir 
 Especificação e exemplos de código de um jogo de batalha naval para sistemas monousuários e não-distribuído:
 
 * [Batalha Naval em Java](http://www.javaprogressivo.net/2012/09/jogo-batalha-naval-em-java.html)
-* [Construindo jogo de batalha naval em matriz 10x15. Navios se cruzando.](ttp://www.guj.com.br/27593-construindo-jogo-de-batalha-naval-em-matriz-10x15-navios-se-cruzando)
+* [Construindo jogo de batalha naval em matriz 10x15. Navios se cruzando.](http://www.guj.com.br/27593-construindo-jogo-de-batalha-naval-em-matriz-10x15-navios-se-cruzando)
 * [Exemplo de jogo](http://www.guj.com.br/java/297085-batalha-naval---fiz-meu-jogo)
 
 Exemplo de códigos em Java de sockets single thread e multi thread:
