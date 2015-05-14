@@ -14,13 +14,16 @@ LFLAGS =
 
 # define any libraries to link into executable:
 # ie.: -lm -lmylib
-LIBS =
+S_LIBS = -lpthread
+C_LIBS =
 
 # define the C source files
-SRC =
+S_SRC = server.c connection.c
+C_SRC =
 
 # define the executable file
-TARGET =
+SERVER = battleship-server
+CLIENT = battleship-client
 
 # define the C object files
 #
@@ -29,10 +32,12 @@ TARGET =
 #       For each word in 'name' replace 'string1' with 'string2'
 # Below we are replacing the suffix .c of all words in the macro SRC
 # with the .o suffix
-OBJ = $(SRC:.c=.o)
+S_OBJ = $(S_SRC:.c=.o)
+C_OBJ = $(C_SRC:.c=.o)
 
 # define the dependency files
-DEP = $(SRC:.c=.d)
+S_DEP = $(S_SRC:.c=.d)
+C_DEP = $(C_SRC:.c=.d)
 
 #
 # The following part of the makefile is generic; it can be used to
@@ -51,18 +56,21 @@ DEP = $(SRC:.c=.d)
 # (see the gnu make manual section about automatic variables)
 #
 
-all: $(TARGET)
+all: $(SERVER) $(CLIENT)
 
-debug: $(TARGET)
+debug: $(SERVER) $(CLIENT)
 debug: CFLAGS += -g
 
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LFLAGS) $(LIBS)
+$(SERVER): $(S_OBJ)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LFLAGS) $(S_LIBS)
+
+$(CLIENT): $(C_OBJ)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LFLAGS) $(C_LIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -MMD -c $< -o $@
 
 clean:
-	rm $(OBJ) $(DEP) $(TARGET)
+	$(RM) $(S_OBJ) $(C_OBJ) $(S_DEP) $(C_DEP) $(SERVER) $(CLIENT)
 
--include $(DEP)
+-include $(S_DEP) $(C_DEP)
