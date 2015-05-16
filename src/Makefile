@@ -14,12 +14,12 @@ LFLAGS =
 
 # define any libraries to link into executable:
 # ie.: -lm -lmylib
-S_LIBS = -lpthread
+S_LIBS = -pthread
 C_LIBS =
 
 # define the C source files
-S_SRC = server.c connection.c
-C_SRC =
+S_SRC = server.c
+C_SRC = client.c
 
 # define the executable file
 SERVER = battleship-server
