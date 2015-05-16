@@ -33,16 +33,16 @@
 #define PORT 5824
 #define PENDING 5
 
-int connect_c = 0;
-pthread_mutex_t lock;
-
 void *connect_client(void*);
+
+static volatile int connect_c = 0;
+static pthread_mutex_t lock;
 
 int main(int argc, char *argv[]){
     int list_sock;
     int *conn_sock;
-    char buff[256] = { 0 };
-    struct sockaddr_in serv_addr, cli_addr;
+    struct sockaddr_in serv_addr;
+    struct sockaddr_in cli_addr;
     socklen_t sock_len;
     pthread_t thread;
 
@@ -51,12 +51,12 @@ int main(int argc, char *argv[]){
         perror(strerror(errno));
     }
 
-    memset(&serv_addr, 0, sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof serv_addr);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    if( bind(list_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0 ){
+    if( bind(list_sock, (struct sockaddr *)&serv_addr, sizeof serv_addr) < 0 ){
         perror("bind() error\n");
         perror(strerror(errno));
     }
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
 
     while( true ){
         conn_sock = malloc(sizeof *conn_sock);
-        sock_len = sizeof(struct sockaddr_in);
+        sock_len = sizeof ( struct sockaddr_in );
 
         *conn_sock = accept(list_sock, (struct sockaddr *)&cli_addr, &sock_len);
         if( *conn_sock < 0 ){
@@ -97,10 +97,8 @@ void *connect_client(void *sock){
     free(sock);
 
     pthread_mutex_lock(&lock);
-
     id = connect_c + 1;
     connect_c++;
-
     pthread_mutex_unlock(&lock);
 
     sprintf(msg_out, "Hello, you are #%d!!\n", id);
@@ -114,6 +112,11 @@ void *connect_client(void *sock){
         write(l_sock, msg_in, strlen(msg_in));
         memset(msg_in, 0, size);
     }
+
+    pthread_mutex_lock(&lock);
+    fprintf(stdout, "Connection #%d closed\n", id);
+    connect_c--;
+    pthread_mutex_unlock(&lock);
 
     return 0;
 }
