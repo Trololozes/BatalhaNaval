@@ -86,8 +86,6 @@ int main(int argc, char *argv[]){
 
         **conn_ptr = accept(list_sock, (struct sockaddr *)&cli_addr, &sock_len);
         if( **conn_ptr < 0 ){
-            perror("accept() error\n");
-            perror(strerror(errno));
             continue;
         }
 
