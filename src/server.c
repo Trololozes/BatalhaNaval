@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
     }
 
     listen(list_sock, PENDING);
-    pthread_create(&thread, NULL, stop_listening, (void *)&list_sock);
+    pthread_create(&thread, NULL, stop_listening, &list_sock);
 
     while( run_Forrest_run ){
         *conn_ptr = malloc(sizeof **conn_ptr);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]){
             continue;
         }
 
-        if( pthread_create(&thread, NULL, connect_client, (void *)*conn_ptr) ){
+        if( pthread_create(&thread, NULL, connect_client, *conn_ptr) ){
             close(**conn_ptr);
             free(*conn_ptr);
             conn_ptr--;
@@ -128,12 +128,16 @@ void *stop_listening(void *sock){
 
     shutdown(*(int *)sock, SHUT_RD);
 
+    pthread_mutex_unlock(&sock_kill_lock);
+
     return 0;
 }
 
 void *connect_client(void *sock){
     const int size = 2048;
     int id;
+    int linha;
+    int coluna;
     int read_len;
     int l_sock = *(int *)sock;
     char msg_in[size];
@@ -144,15 +148,16 @@ void *connect_client(void *sock){
     connect_c++;
     pthread_mutex_unlock(&counter_lock);
 
-    sprintf(msg_out, "Hello, you are #%d!!\n", id);
+    sprintf(msg_out, "Connection Successfull!!\n"
+        "You are Player#%d", id);
     write(l_sock, msg_out, strlen(msg_out));
+    memset(msg_out, 0, size);
 
-    sprintf(msg_out, "Connection Successfull!!\n");
-    write(l_sock, msg_out, strlen(msg_out));
-
-    /* devolve mensagem enviada */
     while( (read_len = recv(l_sock, msg_in, size, 0)) > 0 ){
-        write(l_sock, msg_in, strlen(msg_in));
+        sscanf(msg_in, "%d*%d", &linha, &coluna);
+
+        //interface con batalhanaval
+
         memset(msg_in, 0, size);
     }
 

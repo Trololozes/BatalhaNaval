@@ -15,7 +15,7 @@ LFLAGS =
 # define any libraries to link into executable:
 # ie.: -lm -lmylib
 S_LIBS = -pthread
-C_LIBS =
+C_LIBS = -pthread
 
 # define the C source files
 S_SRC = server.c

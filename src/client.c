@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -30,20 +31,31 @@
 
 #define PORT 5824
 
+void *outgoing_msgs(void*);
+
+static const int size = 256;
+static pthread_mutex_t send_lock;
+static pthread_cond_t send_cond;
+
 int main(int argc, char *argv[]){
-    const int size = 256;
     int sock;
     int read_len;
+    int id = 0;
+    int turn = 0;
     char buff[size];
     char *ip;
     struct sockaddr_in serv_addr;
+    pthread_t thread;
 
     if( argc != 2 ){
-        perror("Error");
+        fprintf(stderr, "Usage: %s [HOST]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
     ip = argv[1];
+
+    pthread_mutex_init(&send_lock, NULL);
+    pthread_cond_init(&send_cond, NULL);
 
     if( (sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
         perror("socket() error\n");
@@ -60,15 +72,62 @@ int main(int argc, char *argv[]){
         perror(strerror(errno));
     }
 
+    pthread_create(&thread, NULL, outgoing_msgs, &sock);
+
+    memset(buff, 0, size);
     while( (read_len = recv(sock, buff, size, 0)) > 0 ){
+        if( ! id ){
+            sscanf(buff, "%*[^#]#%d", &id);
+        }
+        else {
+            sscanf(buff, "%d#%*s", &turn);
+        }
+
         puts(buff);
-
         memset(buff, 0, size);
-        fgets(buff, size, stdin);
 
-        send(sock, buff, strlen(buff), 0);
-        memset(buff, 0, size);
+        if( turn == id ){
+            pthread_mutex_lock(&send_lock);
+            pthread_cond_broadcast(&send_cond);
+            pthread_mutex_unlock(&send_lock);
+        }
     }
 
+    pthread_mutex_destroy(&send_lock);
+    pthread_cond_destroy(&send_cond);
+
     exit(EXIT_SUCCESS);
+}
+
+
+void *outgoing_msgs(void *sock){
+    int l_sock = *(int *)sock;
+    int linha;
+    int coluna;
+    char buff[size];
+    char tmp[10];
+
+    while( true ){
+        pthread_mutex_lock(&send_lock);
+        pthread_cond_wait(&send_cond, &send_lock);
+
+        puts("Digite a linha [0-99]:");
+        fgets(tmp, 10, stdin);
+        sscanf(tmp, "%d\n", &linha);
+        memset(tmp, 0, 10);
+
+        puts("Digite a coluna [0-99]:");
+        fgets(tmp, 10, stdin);
+        sscanf(tmp, "%d\n", &coluna);
+        memset(tmp, 0, 10);
+
+        sprintf(buff, "%d*%d", linha, coluna);
+
+        send(l_sock, buff, strlen(buff), 0);
+        memset(buff, 0, size);
+
+        pthread_mutex_unlock(&send_lock);
+    }
+
+    return 0;
 }
