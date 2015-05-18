@@ -30,10 +30,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include "battleship.h"
 
 #define PORT 5824
 #define PENDING 5
-#define MAX_CONN 50
 
 void sighandler(int);
 void *stop_listening(void*);
@@ -47,7 +47,6 @@ static pthread_cond_t sock_kill_cond;
 
 int main(int argc, char *argv[]){
     int list_sock;
-    int *conn_sock[MAX_CONN] = { NULL };
     int **conn_ptr;
     struct sockaddr_in serv_addr;
     struct sockaddr_in cli_addr;
@@ -98,7 +97,7 @@ int main(int argc, char *argv[]){
         conn_ptr++;
     }
 
-    for( int i = 0; i < MAX_CONN; i++ ){
+    for( int i = 0; i < MAX_PLAYERS; i++ ){
         if( conn_sock[i] != NULL ){
             write(*conn_sock[i], "Server down\n", 12);
             free(conn_sock[i]);
