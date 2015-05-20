@@ -26,12 +26,7 @@
 #include <stdbool.h>
 
 #define MAX_PLAYERS 50
-
-/*  global variables    */
-static int *conn_sock[MAX_PLAYERS];
-static char buffer[256];
-static pthread_mutex_t game_msg_lock;
-static pthread_cond_t game_msg_cond;
+#define ORDEM 100
 
 /*  data types  */
 enum celula{
@@ -47,12 +42,31 @@ typedef enum celula cell_t;
 struct navio{
     int points;
     bool sink;
-    cell_t *posicao[];
+    cell_t **posicao;
 };
 typedef struct navio navio_t;
 
+struct jogo{
+    navio_t *torpedeiro;
+    navio_t *porta_aviao;
+    navio_t *submarino;
+    navio_t *couracado;
+    cell_t grid[ORDEM][ORDEM];
+};
+typedef struct jogo game_t;
+
+/*  global variables    */
+static int *conn_sock[MAX_PLAYERS];
+static char buffer[256];
+static pthread_mutex_t game_msg_lock;
+static pthread_cond_t game_msg_cond;
+
 /*  function declarations   */
-void game_setup();
+game_t *game_setup(void);
+
+void deploy_units(cell_t, int, game_t*);
+
+cell_t **place_on_grid(cell_t, int, cell_t*);
 
 void *broadcast_game(void*);
 
