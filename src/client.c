@@ -23,11 +23,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include "signal_handler.h"
 
 #define PORT 5824
 
@@ -57,6 +59,10 @@ int main(int argc, char *argv[]){
     pthread_mutex_init(&send_lock, NULL);
     pthread_cond_init(&send_cond, NULL);
 
+    pthread_mutex_init(&sock_kill_lock, NULL);
+    pthread_cond_init(&sock_kill_cond, NULL);
+    signal(SIGINT, sighandler);
+
     if( (sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
         perror("socket() error\n");
         perror(strerror(errno));
@@ -72,6 +78,7 @@ int main(int argc, char *argv[]){
         perror(strerror(errno));
     }
 
+    pthread_create(&thread, NULL, close_socket, &sock);
     pthread_create(&thread, NULL, outgoing_msgs, &sock);
 
     memset(buff, 0, size);

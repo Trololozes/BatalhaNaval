@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include "signal_handler.h"
 #include "battleship.h"
 
 #define PORT 5824
@@ -42,8 +43,6 @@ void *connect_client(void*);
 static volatile int connect_c = 0;
 static bool run_Forrest_run = true;
 static pthread_mutex_t counter_lock;
-static pthread_mutex_t sock_kill_lock;
-static pthread_cond_t sock_kill_cond;
 
 int main(int argc, char *argv[]){
     int list_sock;
@@ -53,12 +52,12 @@ int main(int argc, char *argv[]){
     socklen_t sock_len;
     pthread_t thread;
 
-    pthread_cond_init(&sock_kill_cond, NULL);
-    pthread_mutex_init(&sock_kill_lock, NULL);
-    pthread_mutex_init(&counter_lock, NULL);
-
     conn_ptr = conn_sock;
 
+    pthread_mutex_init(&counter_lock, NULL);
+
+    pthread_cond_init(&sock_kill_cond, NULL);
+    pthread_mutex_init(&sock_kill_lock, NULL);
     signal(SIGINT, sighandler);
 
     if( (list_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
@@ -77,7 +76,7 @@ int main(int argc, char *argv[]){
     }
 
     listen(list_sock, PENDING);
-    pthread_create(&thread, NULL, stop_listening, &list_sock);
+    pthread_create(&thread, NULL, close_socket, &list_sock);
 
     while( run_Forrest_run ){
         *conn_ptr = malloc(sizeof **conn_ptr);
@@ -110,26 +109,6 @@ int main(int argc, char *argv[]){
     pthread_cond_destroy(&sock_kill_cond);
 
     exit(EXIT_SUCCESS);
-}
-
-void sighandler(int sig){
-    pthread_mutex_lock(&sock_kill_lock);
-    pthread_cond_broadcast(&sock_kill_cond);
-
-    run_Forrest_run = false;
-
-    pthread_mutex_unlock(&sock_kill_lock);
-}
-
-void *stop_listening(void *sock){
-    pthread_mutex_lock(&sock_kill_lock);
-    pthread_cond_wait(&sock_kill_cond, &sock_kill_lock);
-
-    shutdown(*(int *)sock, SHUT_RD);
-
-    pthread_mutex_unlock(&sock_kill_lock);
-
-    return 0;
 }
 
 void *connect_client(void *sock){

@@ -18,8 +18,8 @@ S_LIBS = -pthread
 C_LIBS = -pthread
 
 # define the C source files
-S_SRC = server.c battleship.c
-C_SRC = client.c
+S_SRC = server.c signal_handler.c battleship.c
+C_SRC = client.c signal_handler.c
 
 # define the executable file
 SERVER = battleship-server
