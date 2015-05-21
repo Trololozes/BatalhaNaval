@@ -67,15 +67,15 @@ int main(int argc, char *argv[]){
     pthread_cond_init(&sock_kill_cond, NULL);
     signal(SIGINT, sighandler);
 
-    if( (sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
-        perror("socket() error\n");
-        perror(strerror(errno));
-    }
-
     memset(&serv_addr, 0, sizeof serv_addr);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = inet_addr(ip);
+
+    if( (sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
+        perror("socket() error\n");
+        perror(strerror(errno));
+    }
 
     if( connect(sock, (struct sockaddr *)&serv_addr, sizeof serv_addr) < 0 ){
         perror("connect() error\n");
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
         if( ! id ){
             sscanf(buff, "%*[^#]#%d", &id);
         }
-        else {
+        else{
             sscanf(buff, "%d#%*s", &turn);
         }
 
@@ -111,7 +111,6 @@ int main(int argc, char *argv[]){
 
     exit(EXIT_SUCCESS);
 }
-
 
 void *outgoing_msgs(void *sock){
     int l_sock = *(int *)sock;
