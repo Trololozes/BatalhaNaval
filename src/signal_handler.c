@@ -20,6 +20,7 @@
  */
 
 #include <sys/socket.h>
+#include <stdbool.h>
 #include "signal_handler.h"
 
 void sighandler(int sig){
@@ -32,6 +33,7 @@ void *close_socket(void *sock){
     pthread_mutex_lock(&sock_kill_lock);
     pthread_cond_wait(&sock_kill_cond, &sock_kill_lock);
 
+    run_Forrest_run = false;
     shutdown(*(int *)sock, SHUT_RD);
 
     pthread_mutex_unlock(&sock_kill_lock);

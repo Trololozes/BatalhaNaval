@@ -19,11 +19,18 @@
  *  IN THE SOFTWARE.
  */
 
-#include <pthread.h>
+#ifndef H_SIG_HAND
+#define H_SIG_HAND
 
-static pthread_mutex_t sock_kill_lock;
-static pthread_cond_t sock_kill_cond;
+#include <pthread.h>
+#include <stdbool.h>
+
+extern bool run_Forrest_run;
+extern pthread_mutex_t sock_kill_lock;
+extern pthread_cond_t sock_kill_cond;
 
 void sighandler(int);
 
 void *close_socket(void*);
+
+#endif

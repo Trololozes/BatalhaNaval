@@ -39,6 +39,10 @@ static const int size = 256;
 static pthread_mutex_t send_lock;
 static pthread_cond_t send_cond;
 
+bool run_Forrest_run = true;
+pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
+
 int main(int argc, char *argv[]){
     int sock;
     int read_len;
@@ -102,6 +106,8 @@ int main(int argc, char *argv[]){
 
     pthread_mutex_destroy(&send_lock);
     pthread_cond_destroy(&send_cond);
+    pthread_mutex_destroy(&sock_kill_lock);
+    pthread_cond_destroy(&sock_kill_cond);
 
     exit(EXIT_SUCCESS);
 }
@@ -114,7 +120,7 @@ void *outgoing_msgs(void *sock){
     char buff[size];
     char tmp[10];
 
-    while( true ){
+    while( run_Forrest_run ){
         pthread_mutex_lock(&send_lock);
         pthread_cond_wait(&send_cond, &send_lock);
 

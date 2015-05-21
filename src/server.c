@@ -36,13 +36,17 @@
 #define PORT 5824
 #define PENDING 5
 
-void sighandler(int);
-void *stop_listening(void*);
+void *timeout(void*);
 void *connect_client(void*);
 
 static volatile int connect_c = 0;
-static bool run_Forrest_run = true;
 static pthread_mutex_t counter_lock;
+static pthread_mutex_t timeout_lock;
+static pthread_cond_t timeout_cond;
+
+bool run_Forrest_run = true;
+pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 
 int main(int argc, char *argv[]){
     int list_sock;
@@ -51,49 +55,58 @@ int main(int argc, char *argv[]){
     struct sockaddr_in cli_addr;
     socklen_t sock_len;
     pthread_t thread;
+    pthread_t close_thr;
 
     conn_ptr = conn_sock;
 
     pthread_mutex_init(&counter_lock, NULL);
+    pthread_cond_init(&timeout_cond, NULL);
+    pthread_mutex_init(&timeout_lock, NULL);
 
     pthread_cond_init(&sock_kill_cond, NULL);
     pthread_mutex_init(&sock_kill_lock, NULL);
     signal(SIGINT, sighandler);
-
-    if( (list_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
-        perror("socket() error\n");
-        perror(strerror(errno));
-    }
 
     memset(&serv_addr, 0, sizeof serv_addr);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    if( bind(list_sock, (struct sockaddr *)&serv_addr, sizeof serv_addr) < 0 ){
-        perror("bind() error\n");
-        perror(strerror(errno));
-    }
-
-    listen(list_sock, PENDING);
-    pthread_create(&thread, NULL, close_socket, &list_sock);
-
     while( run_Forrest_run ){
-        *conn_ptr = malloc(sizeof **conn_ptr);
-        sock_len = sizeof ( struct sockaddr_in );
-
-        **conn_ptr = accept(list_sock, (struct sockaddr *)&cli_addr, &sock_len);
-        if( **conn_ptr < 0 ){
-            continue;
+        if( (list_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
+            perror("socket() error\n");
+            perror(strerror(errno));
         }
 
-        if( pthread_create(&thread, NULL, connect_client, *conn_ptr) ){
-            close(**conn_ptr);
-            free(*conn_ptr);
-            conn_ptr--;
+        if( bind(list_sock, (struct sockaddr *)&serv_addr, sizeof serv_addr) < 0 ){
+            perror("bind() error\n");
+            perror(strerror(errno));
         }
 
-        conn_ptr++;
+        listen(list_sock, PENDING);
+        pthread_create(&close_thr, NULL, close_socket, &list_sock);
+
+        while( true ){
+            *conn_ptr = malloc(sizeof **conn_ptr);
+            sock_len = sizeof ( struct sockaddr_in );
+
+            **conn_ptr = accept(list_sock, (struct sockaddr *)&cli_addr, &sock_len);
+            if( ! run_Forrest_run ) break;
+            if( **conn_ptr < 0 ) continue;
+
+//            pthread_create(&thread, NULL, timeout, NULL);
+
+            if( pthread_create(&thread, NULL, connect_client, *conn_ptr) ){
+                close(**conn_ptr);
+                free(*conn_ptr);
+                conn_ptr--;
+            }
+
+            conn_ptr++;
+        }
+
+        pthread_cancel(close_thr);
+        close(list_sock);
     }
 
     for( int i = 0; i < MAX_PLAYERS; i++ ){
@@ -107,8 +120,14 @@ int main(int argc, char *argv[]){
     pthread_mutex_destroy(&counter_lock);
     pthread_mutex_destroy(&sock_kill_lock);
     pthread_cond_destroy(&sock_kill_cond);
+    pthread_mutex_destroy(&timeout_lock);
+    pthread_cond_destroy(&timeout_cond);
 
     exit(EXIT_SUCCESS);
+}
+
+void *timeout(void *dummy){
+    return 0;
 }
 
 void *connect_client(void *sock){
