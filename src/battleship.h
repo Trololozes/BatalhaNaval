@@ -56,10 +56,7 @@ struct jogo{
 typedef struct jogo game_t;
 
 /*  global variables    */
-static int *conn_sock[MAX_PLAYERS];
-static char buffer[256];
-static pthread_mutex_t game_msg_lock;
-static pthread_cond_t game_msg_cond;
+extern int *conn_sock[MAX_PLAYERS];
 
 /*  function declarations   */
 game_t *game_setup(void);
@@ -67,6 +64,14 @@ game_t *game_setup(void);
 void deploy_units(cell_t, int, game_t*);
 
 cell_t **place_on_grid(cell_t, int, cell_t*);
+
+game_t *game_cleanup(game_t*);
+
+void finish_units(cell_t, int, game_t*);
+
+// game_run()
+
+// game_fire()
 
 void *broadcast_game(void*);
 

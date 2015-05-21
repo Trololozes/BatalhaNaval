@@ -48,6 +48,8 @@ bool run_Forrest_run = true;
 pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 
+int *conn_sock[MAX_PLAYERS] = { NULL };
+
 int main(int argc, char *argv[]){
     int list_sock;
     int **conn_ptr;
@@ -56,6 +58,7 @@ int main(int argc, char *argv[]){
     socklen_t sock_len;
     pthread_t thread;
     pthread_t close_thr;
+    game_t *game;
 
     conn_ptr = conn_sock;
 
@@ -86,6 +89,8 @@ int main(int argc, char *argv[]){
         listen(list_sock, PENDING);
         pthread_create(&close_thr, NULL, close_socket, &list_sock);
 
+        game = game_setup();
+
         while( true ){
             *conn_ptr = malloc(sizeof **conn_ptr);
             sock_len = sizeof ( struct sockaddr_in );
@@ -94,7 +99,7 @@ int main(int argc, char *argv[]){
             if( ! run_Forrest_run ) break;
             if( **conn_ptr < 0 ) continue;
 
-//            pthread_create(&thread, NULL, timeout, NULL);
+            pthread_create(&thread, NULL, timeout, NULL);
 
             if( pthread_create(&thread, NULL, connect_client, *conn_ptr) ){
                 close(**conn_ptr);
@@ -107,6 +112,7 @@ int main(int argc, char *argv[]){
 
         pthread_cancel(close_thr);
         close(list_sock);
+        game = game_cleanup(game);
     }
 
     for( int i = 0; i < MAX_PLAYERS; i++ ){

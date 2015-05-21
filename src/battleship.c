@@ -25,7 +25,11 @@
 #include <time.h>
 #include "battleship.h"
 
-game_t *setup_game(void){
+static char buffer[256];
+static pthread_mutex_t game_msg_lock;
+static pthread_cond_t game_msg_cond;
+
+game_t *game_setup(void){
     game_t *game = malloc(sizeof *game);
     game->torpedeiro = calloc(8, sizeof *game->torpedeiro);
     game->porta_aviao = calloc(5, sizeof *game->porta_aviao);
@@ -122,6 +126,55 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
         *(pos[i]) = ship;
 
     return pos;
+}
+
+game_t *game_cleanup(game_t *game){
+    finish_units(torpedo, 8, game);
+    finish_units(carrier, 5, game);
+    finish_units(submarine, 3, game);
+    finish_units(battleship, 2, game);
+
+    free(game->torpedeiro);
+    free(game->porta_aviao);
+    free(game->submarino);
+    free(game->couracado);
+
+    game->torpedeiro = NULL;
+    game->porta_aviao = NULL;
+    game->submarino = NULL;
+    game->couracado = NULL;
+
+    free(game);
+
+    return NULL;
+}
+
+void finish_units(cell_t ship, int size, game_t *game){
+    navio_t *boat;
+
+    switch(ship){
+        case torpedo:
+            boat = game->torpedeiro;
+            break;
+        case carrier:
+            boat = game->porta_aviao;
+            break;
+        case submarine:
+            boat = game->submarino;
+            break;
+        case battleship:
+            boat = game->couracado;
+            break;
+        default:
+            break;
+    }
+
+    for( int i = 0; i < size; i++ ){
+        boat[i].points = 0;;
+        boat[i].sink = false;
+        free(boat[i].posicao);
+        boat[i].posicao = NULL;
+    }
 }
 
 void *broadcast_game(void *conn){
