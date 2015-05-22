@@ -55,8 +55,8 @@ int main(int argc, char *argv[]){
     struct sockaddr_in serv_addr;
     struct sockaddr_in cli_addr;
     socklen_t sock_len;
-    pthread_t thread;
     pthread_t close_thr;
+    pthread_t dummy_thr;
     game_t *game;
     player_t **player;
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
         pthread_create(&close_thr, NULL, close_socket, &list_sock);
 
         game = game_setup();
-        pthread_create(&thread, NULL, broadcast_game, all_players);
+        pthread_create(&dummy_thr, NULL, broadcast_game, all_players);
 
         while( true ){
             *player = malloc(sizeof **player);
@@ -104,9 +104,9 @@ int main(int argc, char *argv[]){
             if( (**player).socket < 0 ) continue;
 
             if( ! connect_c )
-                pthread_create(&thread, NULL, timeout, NULL);
+                pthread_create(&dummy_thr, NULL, timeout, NULL);
 
-            if( pthread_create(&thread, NULL, connect_client, *player) ){
+            if( pthread_create(&(**player).thread, NULL, connect_client, *player) ){
                 close((**player).socket);
                 free(*player);
                 player--;
