@@ -77,7 +77,7 @@ void deploy_units(cell_t ship, int size, game_t *game){
             boat = game->couracado;
             break;
         default:
-            break;
+            return;
     }
 
     for( int i = 0; i < size; i++ ){
@@ -166,7 +166,7 @@ void finish_units(cell_t ship, int size, game_t *game){
             boat = game->couracado;
             break;
         default:
-            break;
+            return;
     }
 
     for( int i = 0; i < size; i++ ){
