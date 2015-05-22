@@ -90,6 +90,7 @@ int main(int argc, char *argv[]){
         pthread_create(&close_thr, NULL, close_socket, &list_sock);
 
         game = game_setup();
+        pthread_create(&thread, NULL, broadcast_game, conn_sock);
 
         while( true ){
             *conn_ptr = malloc(sizeof **conn_ptr);

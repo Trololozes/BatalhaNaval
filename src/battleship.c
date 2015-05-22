@@ -22,6 +22,8 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <time.h>
 #include "battleship.h"
 
@@ -35,6 +37,9 @@ game_t *game_setup(void){
     game->porta_aviao = calloc(PAV_N, sizeof *game->porta_aviao);
     game->submarino = calloc(SUB_N, sizeof *game->submarino);
     game->couracado = calloc(COU_N, sizeof *game->couracado);
+
+    pthread_mutex_init(&game_msg_lock, NULL);
+    pthread_cond_init(&game_msg_cond, NULL);
 
     for( int i = 0; i < ORDEM; i++ ){
         for( int j = 0; j < ORDEM; j++ ){
@@ -153,6 +158,9 @@ game_t *game_cleanup(game_t *game){
 
     free(game);
 
+    pthread_mutex_destroy(&game_msg_lock);
+    pthread_cond_destroy(&game_msg_cond);
+
     return NULL;
 }
 
@@ -193,23 +201,32 @@ int game_fire(int x, int y, game_t *game){
     int i;
     int size;
     int points;
+    char *output;
+    cell_t target;
     cell_t *pos;
     navio_t *ship;
 
-    switch(game->grid[x][y]){
+    target = game->grid[x][y];
+    game->grid[x][y] = hit;
+
+    switch(target){
         case torpedo:
+            output = "Torpedeiro!";
             size = TOR_N;
             ship = game->torpedeiro;
             break;
         case carrier:
+            output = "Porta-avioes!";
             size = PAV_N;
             ship = game->porta_aviao;
             break;
         case submarine:
+            output = "Submarino!";
             size = SUB_N;
             ship = game->submarino;
             break;
         case battleship:
+            output = "Couracado!";
             size = COU_N;
             ship = game->couracado;
             break;
@@ -240,5 +257,14 @@ int game_fire(int x, int y, game_t *game){
 void *broadcast_game(void *conn){
     int **socks = conn;
 
+    pthread_mutex_lock(&game_msg_lock);
+    pthread_cond_wait(&game_msg_cond, &game_msg_lock);
+
+    for( int i = 0; i < MAX_PLAYERS; i++ )
+        if( socks[i] != NULL )
+            write(*socks[i], buffer, strlen(buffer));
+
+    memset(buffer, 0, 256);
+    pthread_mutex_unlock(&game_msg_lock);
     return 0;
 }
