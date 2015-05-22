@@ -187,6 +187,55 @@ void finish_units(cell_t ship, game_t *game){
     }
 }
 
+int game_fire(int x, int y, game_t *game){
+    int i;
+    int size;
+    int points;
+    cell_t *pos;
+    navio_t *ship;
+
+    switch(game->grid[x][y]){
+        case torpedo:
+            size = TOR_N;
+            ship = game->torpedeiro;
+            break;
+        case carrier:
+            size = PAV_N;
+            ship = game->porta_aviao;
+            break;
+        case submarine:
+            size = SUB_N;
+            ship = game->submarino;
+            break;
+        case battleship:
+            size = COU_N;
+            ship = game->couracado;
+            break;
+        case water:
+            return 0;
+        case hit:
+            return 0;
+    }
+
+    for( i = 0; i < size; i++ ){
+        if( ship[i].sink )
+            continue;
+        // marcar o fim do vetor posicao com um NULL
+        for( pos = *(ship[i].posicao); pos != NULL; pos++ ){
+            if( *pos != hit )
+                break;
+        }
+        if( pos == NULL )
+            break;
+    }
+
+    ship[i].sink = true;
+    points = ship[i].points;
+    ship[i].points = 0;
+
+    return points;
+}
+
 void *broadcast_game(void *conn){
     int **socks = conn;
 
