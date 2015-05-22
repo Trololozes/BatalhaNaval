@@ -66,13 +66,13 @@ extern int *conn_sock[MAX_PLAYERS];
 /*  function declarations   */
 game_t *game_setup(void);
 
-void deploy_units(cell_t, int, game_t*);
+void deploy_units(cell_t, game_t*);
 
 cell_t **place_on_grid(cell_t, int, cell_t*);
 
 game_t *game_cleanup(game_t*);
 
-void finish_units(cell_t, int, game_t*);
+void finish_units(cell_t, game_t*);
 
 // game_run()
 

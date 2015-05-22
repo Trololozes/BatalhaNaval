@@ -42,38 +42,43 @@ game_t *game_setup(void){
         }
     }
 
-    deploy_units(torpedo, TOR_N, game);
-    deploy_units(carrier, PAV_N, game);
-    deploy_units(submarine, SUB_N, game);
-    deploy_units(battleship, COU_N, game);
+    deploy_units(torpedo, game);
+    deploy_units(carrier, game);
+    deploy_units(submarine, game);
+    deploy_units(battleship, game);
 
     return game;
 }
 
-void deploy_units(cell_t ship, int size, game_t *game){
+void deploy_units(cell_t ship, game_t *game){
     int points;
     int width;
+    int size;
     navio_t *boat;
 
     switch(ship){
         case torpedo:
             points = 15;
             width = 2;
+            size = TOR_N;
             boat = game->torpedeiro;
             break;
         case carrier:
             points = 20;
             width = 3;
+            size = PAV_N;
             boat = game->porta_aviao;
             break;
         case submarine:
             points = 35;
             width = 3;
+            size = SUB_N;
             boat = game->submarino;
             break;
         case battleship:
             points = 50;
             width = 5;
+            size = COU_N;
             boat = game->couracado;
             break;
         default:
@@ -129,10 +134,10 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
 }
 
 game_t *game_cleanup(game_t *game){
-    finish_units(torpedo, TOR_N, game);
-    finish_units(carrier, PAV_N, game);
-    finish_units(submarine, SUB_N, game);
-    finish_units(battleship, COU_N, game);
+    finish_units(torpedo, game);
+    finish_units(carrier, game);
+    finish_units(submarine, game);
+    finish_units(battleship, game);
 
     free(game->torpedeiro);
     free(game->porta_aviao);
@@ -149,20 +154,25 @@ game_t *game_cleanup(game_t *game){
     return NULL;
 }
 
-void finish_units(cell_t ship, int size, game_t *game){
+void finish_units(cell_t ship, game_t *game){
+    int size;
     navio_t *boat;
 
     switch(ship){
         case torpedo:
+            size = TOR_N;
             boat = game->torpedeiro;
             break;
         case carrier:
+            size = PAV_N;
             boat = game->porta_aviao;
             break;
         case submarine:
+            size = SUB_N;
             boat = game->submarino;
             break;
         case battleship:
+            size = COU_N;
             boat = game->couracado;
             break;
         default:
