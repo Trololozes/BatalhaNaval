@@ -28,6 +28,11 @@
 #define MAX_PLAYERS 50
 #define ORDEM 100
 
+#define SUB_N 3
+#define PAV_N 5
+#define TOR_N 8
+#define COU_N 2
+
 /*  data types  */
 enum celula{
     hit,

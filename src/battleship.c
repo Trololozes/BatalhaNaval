@@ -31,10 +31,10 @@ static pthread_cond_t game_msg_cond;
 
 game_t *game_setup(void){
     game_t *game = malloc(sizeof *game);
-    game->torpedeiro = calloc(8, sizeof *game->torpedeiro);
-    game->porta_aviao = calloc(5, sizeof *game->porta_aviao);
-    game->submarino = calloc(3, sizeof *game->submarino);
-    game->couracado = calloc(2, sizeof *game->couracado);
+    game->torpedeiro = calloc(TOR_N, sizeof *game->torpedeiro);
+    game->porta_aviao = calloc(PAV_N, sizeof *game->porta_aviao);
+    game->submarino = calloc(SUB_N, sizeof *game->submarino);
+    game->couracado = calloc(COU_N, sizeof *game->couracado);
 
     for( int i = 0; i < ORDEM; i++ ){
         for( int j = 0; j < ORDEM; j++ ){
@@ -42,10 +42,10 @@ game_t *game_setup(void){
         }
     }
 
-    deploy_units(torpedo, 8, game);
-    deploy_units(carrier, 5, game);
-    deploy_units(submarine, 3, game);
-    deploy_units(battleship, 2, game);
+    deploy_units(torpedo, TOR_N, game);
+    deploy_units(carrier, PAV_N, game);
+    deploy_units(submarine, SUB_N, game);
+    deploy_units(battleship, COU_N, game);
 
     return game;
 }
@@ -129,10 +129,10 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
 }
 
 game_t *game_cleanup(game_t *game){
-    finish_units(torpedo, 8, game);
-    finish_units(carrier, 5, game);
-    finish_units(submarine, 3, game);
-    finish_units(battleship, 2, game);
+    finish_units(torpedo, TOR_N, game);
+    finish_units(carrier, PAV_N, game);
+    finish_units(submarine, SUB_N, game);
+    finish_units(battleship, COU_N, game);
 
     free(game->torpedeiro);
     free(game->porta_aviao);
