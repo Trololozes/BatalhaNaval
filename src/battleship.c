@@ -99,7 +99,7 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
     int jump;
     bool from_start = true;
     cell_t *try;
-    cell_t **pos = calloc(width, sizeof **pos);
+    cell_t **pos = calloc(width+1, sizeof **pos);
 
     srand(time(NULL));
     rand();
@@ -129,6 +129,8 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
 
     for( int i = 0; i < width; i++ )
         *(pos[i]) = ship;
+
+    pos[width] = NULL;
 
     return pos;
 }
@@ -220,7 +222,6 @@ int game_fire(int x, int y, game_t *game){
     for( i = 0; i < size; i++ ){
         if( ship[i].sink )
             continue;
-        // marcar o fim do vetor posicao com um NULL
         for( pos = *(ship[i].posicao); pos != NULL; pos++ ){
             if( *pos != hit )
                 break;
