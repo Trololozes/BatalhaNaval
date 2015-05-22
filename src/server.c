@@ -48,19 +48,19 @@ bool run_Forrest_run = true;
 pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 
-int *conn_sock[MAX_PLAYERS] = { NULL };
+player_t *all_players[MAX_PLAYERS] = { NULL };
 
 int main(int argc, char *argv[]){
     int list_sock;
-    int **conn_ptr;
     struct sockaddr_in serv_addr;
     struct sockaddr_in cli_addr;
     socklen_t sock_len;
     pthread_t thread;
     pthread_t close_thr;
     game_t *game;
+    player_t **player;
 
-    conn_ptr = conn_sock;
+    player = all_players;
 
     pthread_mutex_init(&counter_lock, NULL);
     pthread_cond_init(&timeout_cond, NULL);
@@ -90,25 +90,29 @@ int main(int argc, char *argv[]){
         pthread_create(&close_thr, NULL, close_socket, &list_sock);
 
         game = game_setup();
-        pthread_create(&thread, NULL, broadcast_game, conn_sock);
+        pthread_create(&thread, NULL, broadcast_game, all_players);
 
         while( true ){
-            *conn_ptr = malloc(sizeof **conn_ptr);
+            *player = malloc(sizeof **player);
             sock_len = sizeof ( struct sockaddr_in );
 
-            **conn_ptr = accept(list_sock, (struct sockaddr *)&cli_addr, &sock_len);
+            (**player).game = game;
+            (**player).pontos = 0;
+
+            (**player).socket = accept(list_sock, (struct sockaddr *)&cli_addr, &sock_len);
             if( ! run_Forrest_run ) break;
-            if( **conn_ptr < 0 ) continue;
+            if( (**player).socket < 0 ) continue;
 
-            pthread_create(&thread, NULL, timeout, NULL);
+            if( ! connect_c )
+                pthread_create(&thread, NULL, timeout, NULL);
 
-            if( pthread_create(&thread, NULL, connect_client, *conn_ptr) ){
-                close(**conn_ptr);
-                free(*conn_ptr);
-                conn_ptr--;
+            if( pthread_create(&thread, NULL, connect_client, *player) ){
+                close((**player).socket);
+                free(*player);
+                player--;
             }
 
-            conn_ptr++;
+            player++;
         }
 
         pthread_cancel(close_thr);
@@ -117,10 +121,11 @@ int main(int argc, char *argv[]){
     }
 
     for( int i = 0; i < MAX_PLAYERS; i++ ){
-        if( conn_sock[i] != NULL ){
-            write(*conn_sock[i], "Server down\n", 12);
-            free(conn_sock[i]);
-            conn_sock[i] = NULL;
+        if( all_players[i] != NULL ){
+            write(all_players[i]->socket, "Server down\n", 12);
+            // fix this
+//            free(all_players[i]);
+            all_players[i] = NULL;
         }
     }
 
@@ -137,36 +142,35 @@ void *timeout(void *dummy){
     return 0;
 }
 
-void *connect_client(void *sock){
+void *connect_client(void *player){
     const int size = 2048;
-    int id;
     int linha;
     int coluna;
     int read_len;
-    int l_sock = *(int *)sock;
     char msg_in[size];
     char msg_out[size];
+    player_t *me = (player_t *)player;
 
     pthread_mutex_lock(&counter_lock);
-    id = connect_c + 1;
+    me->id = connect_c + 1;
     connect_c++;
     pthread_mutex_unlock(&counter_lock);
 
     sprintf(msg_out, "Connection Successfull!!\n"
-        "You are Player#%d", id);
-    write(l_sock, msg_out, strlen(msg_out));
+        "You are Player#%d", me->id);
+    write(me->socket, msg_out, strlen(msg_out));
     memset(msg_out, 0, size);
 
-    while( (read_len = recv(l_sock, msg_in, size, 0)) > 0 ){
+    while( (read_len = recv(me->socket, msg_in, size, 0)) > 0 ){
         sscanf(msg_in, "%d*%d", &linha, &coluna);
 
-        //interface con batalhanaval
+        //me->pontos += game_fire(linha, coluna, me->game);
 
         memset(msg_in, 0, size);
     }
 
     pthread_mutex_lock(&counter_lock);
-    fprintf(stdout, "Connection #%d closed\n", id);
+    fprintf(stdout, "Connection #%d closed\n", me->id);
     connect_c--;
     pthread_mutex_unlock(&counter_lock);
 

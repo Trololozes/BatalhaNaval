@@ -60,8 +60,17 @@ struct jogo{
 };
 typedef struct jogo game_t;
 
+struct jogador{
+    int id;
+    int pontos;
+    int socket;
+    pthread_t thread;
+    game_t *game;
+};
+typedef struct jogador player_t;
+
 /*  global variables    */
-extern int *conn_sock[MAX_PLAYERS];
+extern player_t *all_players[MAX_PLAYERS];
 
 /*  function declarations   */
 game_t *game_setup(void);
