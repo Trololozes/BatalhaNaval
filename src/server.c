@@ -118,16 +118,17 @@ int main(int argc, char *argv[]){
 
         pthread_cancel(close_thr);
         pthread_cancel(shout_thr);
+
+        for( int i = 0; i < MAX_PLAYERS; i++ ){
+            if( all_players[i] != NULL ){
+                write(all_players[i]->socket, "Server down\n", 12);
+                free(all_players[i]);
+                all_players[i] = NULL;
+            }
+        }
+
         close(list_sock);
         game = game_cleanup(game);
-    }
-
-    for( int i = 0; i < MAX_PLAYERS; i++ ){
-        if( all_players[i] != NULL ){
-            write(all_players[i]->socket, "Server down\n", 12);
-            free(all_players[i]);
-            all_players[i] = NULL;
-        }
     }
 
     pthread_mutex_destroy(&counter_lock);
