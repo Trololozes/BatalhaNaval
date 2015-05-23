@@ -125,8 +125,7 @@ int main(int argc, char *argv[]){
     for( int i = 0; i < MAX_PLAYERS; i++ ){
         if( all_players[i] != NULL ){
             write(all_players[i]->socket, "Server down\n", 12);
-            // fix this
-//            free(all_players[i]);
+            free(all_players[i]);
             all_players[i] = NULL;
         }
     }

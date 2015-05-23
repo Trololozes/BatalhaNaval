@@ -83,8 +83,6 @@ game_t *game_cleanup(game_t*);
 
 void finish_units(cell_t, game_t*);
 
-// game_run()
-
 int game_fire(int, int, game_t*);
 
 void *broadcast_game(void*);

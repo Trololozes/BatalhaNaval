@@ -135,9 +135,6 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
     for( int i = 0; i < width; i++ )
         *(pos[i]) = ship;
 
-    //fix this
-//    pos[width] = NULL;
-
     return pos;
 }
 
