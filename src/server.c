@@ -56,6 +56,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in cli_addr;
     socklen_t sock_len;
     pthread_t close_thr;
+    pthread_t shout_thr;
     pthread_t dummy_thr;
     game_t *game;
     player_t **player;
@@ -90,7 +91,7 @@ int main(int argc, char *argv[]){
         pthread_create(&close_thr, NULL, close_socket, &list_sock);
 
         game = game_setup();
-        pthread_create(&dummy_thr, NULL, broadcast_game, all_players);
+        pthread_create(&shout_thr, NULL, broadcast_game, all_players);
 
         while( true ){
             *player = malloc(sizeof **player);
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]){
         }
 
         pthread_cancel(close_thr);
+        pthread_cancel(shout_thr);
         close(list_sock);
         game = game_cleanup(game);
     }

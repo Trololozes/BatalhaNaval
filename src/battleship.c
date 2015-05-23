@@ -248,6 +248,12 @@ int game_fire(int x, int y, game_t *game){
             break;
     }
 
+    pthread_mutex_lock(&game_msg_lock);
+    strncat(buffer, output, 256);
+
+    pthread_cond_broadcast(&game_msg_cond);
+    pthread_mutex_unlock(&game_msg_lock);
+
     ship[i].sink = true;
     points = ship[i].points;
     ship[i].points = 0;
@@ -258,14 +264,17 @@ int game_fire(int x, int y, game_t *game){
 void *broadcast_game(void *conn){
     int **socks = conn;
 
-    pthread_mutex_lock(&game_msg_lock);
-    pthread_cond_wait(&game_msg_cond, &game_msg_lock);
+    while( true ){
+        pthread_mutex_lock(&game_msg_lock);
+        pthread_cond_wait(&game_msg_cond, &game_msg_lock);
 
-    for( int i = 0; i < MAX_PLAYERS; i++ )
-        if( socks[i] != NULL )
-            write(*socks[i], buffer, strlen(buffer));
+        for( int i = 0; i < MAX_PLAYERS; i++ )
+            if( socks[i] != NULL )
+                write(*socks[i], buffer, strlen(buffer));
 
-    memset(buffer, 0, 256);
-    pthread_mutex_unlock(&game_msg_lock);
+        memset(buffer, 0, 256);
+        pthread_mutex_unlock(&game_msg_lock);
+    }
+
     return 0;
 }
