@@ -34,6 +34,8 @@
 #define COU_N 2
 
 /*  data types  */
+struct timeval precision_t; 
+
 enum celula{
     hit,
     water,

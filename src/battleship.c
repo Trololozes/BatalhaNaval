@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include "battleship.h"
 
 static char buffer[256];
@@ -106,15 +106,17 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
     cell_t *try;
     cell_t **pos = calloc(width+1, sizeof **pos);
 
-    srand(time(NULL));
+    gettimeofday(&precision_t,NULL);
+
+    srand((precision_t.tv_sec) + (precision_t.tv_usec));
     rand();
 
     jump = ( rand() % 2 ) ? 1 : ORDEM;
 
     while( c < width ){
         if( from_start ){
-            x = rand() % 100;
-            y = rand() % 100;
+            x = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
+            y = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
             try = grid + x + y;
             from_start = false;
         }
