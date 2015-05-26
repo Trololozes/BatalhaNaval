@@ -85,6 +85,6 @@ void finish_units(cell_t, game_t*);
 
 int game_fire(int, int, game_t*);
 
-void *broadcast_game(void*);
+void broadcast_game(char*);
 
 #endif

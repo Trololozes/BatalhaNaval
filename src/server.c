@@ -61,7 +61,6 @@ player_t *all_players[MAX_PLAYERS] = { NULL };
 int main(int argc, char *argv[]){
     struct sockaddr_in serv_addr;
     pthread_t close_thr;
-    pthread_t shout_thr;
     pthread_t listen_thr;
     info_t specs;
 
@@ -94,18 +93,21 @@ int main(int argc, char *argv[]){
     pthread_create(&close_thr, NULL, close_socket, &specs.sock);
 
     specs.game = game_setup();
-    pthread_create(&shout_thr, NULL, broadcast_game, all_players);
 
     pthread_create(&listen_thr, NULL, listener, &specs);
 
-    /*
-     *  busy-wait loop para verificar conexoes e liberar jogo.
-     */
+    while( run_Forrest_run && connect_c < 2 ){
+        sleep(15);
+
+        if( connect_c )
+            broadcast_game("Aguardando jogadores...\n");
+    }
+
+    broadcast_game("Shall we play a game?\n");
 
     pthread_barrier_wait(&listen_bar);
 
     pthread_cancel(close_thr);
-    pthread_cancel(shout_thr);
 
     for( int i = 0; i < MAX_PLAYERS; i++ ){
         if( all_players[i] != NULL ){
@@ -172,7 +174,7 @@ void *connect_client(void *player){
     pthread_mutex_unlock(&counter_lock);
 
     sprintf(msg_out, "Connection Successfull!!\n"
-        "You are Player#%d", me->id);
+        "You are Player#%d\n", me->id);
     write(me->socket, msg_out, strlen(msg_out));
     memset(msg_out, 0, size);
 

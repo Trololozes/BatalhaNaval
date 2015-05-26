@@ -27,19 +27,12 @@
 #include <time.h>
 #include "battleship.h"
 
-static char buffer[256];
-static pthread_mutex_t game_msg_lock;
-static pthread_cond_t game_msg_cond;
-
 game_t *game_setup(void){
     game_t *game = malloc(sizeof *game);
     game->torpedeiro = calloc(TOR_N, sizeof *game->torpedeiro);
     game->porta_aviao = calloc(PAV_N, sizeof *game->porta_aviao);
     game->submarino = calloc(SUB_N, sizeof *game->submarino);
     game->couracado = calloc(COU_N, sizeof *game->couracado);
-
-    pthread_mutex_init(&game_msg_lock, NULL);
-    pthread_cond_init(&game_msg_cond, NULL);
 
     for( int i = 0; i < ORDEM; i++ ){
         for( int j = 0; j < ORDEM; j++ ){
@@ -156,9 +149,6 @@ game_t *game_cleanup(game_t *game){
 
     free(game);
 
-    pthread_mutex_destroy(&game_msg_lock);
-    pthread_cond_destroy(&game_msg_cond);
-
     return NULL;
 }
 
@@ -245,11 +235,9 @@ int game_fire(int x, int y, game_t *game){
             break;
     }
 
-    pthread_mutex_lock(&game_msg_lock);
-    strncat(buffer, output, 256);
-
-    pthread_cond_broadcast(&game_msg_cond);
-    pthread_mutex_unlock(&game_msg_lock);
+    /*
+     *  broadcast_game( , "\n");
+     */
 
     ship[i].sink = true;
     points = ship[i].points;
@@ -258,20 +246,11 @@ int game_fire(int x, int y, game_t *game){
     return points;
 }
 
-void *broadcast_game(void *conn){
-    int **socks = conn;
+void broadcast_game(char *msg){
+    player_t **player = all_players;
 
-    while( true ){
-        pthread_mutex_lock(&game_msg_lock);
-        pthread_cond_wait(&game_msg_cond, &game_msg_lock);
+    for( int i = 0; i < MAX_PLAYERS; i++ )
+        if( player[i] != NULL )
+            write(player[i]->socket, msg, strlen(msg));
 
-        for( int i = 0; i < MAX_PLAYERS; i++ )
-            if( socks[i] != NULL )
-                write(*socks[i], buffer, strlen(buffer));
-
-        memset(buffer, 0, 256);
-        pthread_mutex_unlock(&game_msg_lock);
-    }
-
-    return 0;
 }

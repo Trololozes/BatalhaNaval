@@ -94,7 +94,7 @@ int main(int argc, char *argv[]){
             sscanf(buff, "%d#%*s", &turn);
         }
 
-        puts(buff);
+        fputs(buff, stdout);
         memset(buff, 0, size);
 
         if( turn == id ){
