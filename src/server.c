@@ -56,7 +56,7 @@ bool run_Forrest_run = true;
 pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 
-player_t *all_players[MAX_PLAYERS] = { NULL };
+player_t *all_players = NULL;
 
 int main(int argc, char *argv[]){
     struct sockaddr_in serv_addr;
@@ -94,6 +94,11 @@ int main(int argc, char *argv[]){
 
     specs.game = game_setup();
 
+    all_players = malloc(sizeof *all_players);
+    all_players->id = 0;
+    all_players->next = all_players;
+    all_players->prev = all_players;
+
     pthread_create(&listen_thr, NULL, listener, &specs);
 
     while( run_Forrest_run && connect_c < 2 ){
@@ -110,13 +115,7 @@ int main(int argc, char *argv[]){
 
     pthread_cancel(close_thr);
 
-    for( int i = 0; i < MAX_PLAYERS; i++ ){
-        if( all_players[i] != NULL ){
-            write(all_players[i]->socket, "Server down\n", 12);
-            free(all_players[i]);
-            all_players[i] = NULL;
-        }
-    }
+    broadcast_game("Server down\n");
 
     close(specs.sock);
     specs.game = game_cleanup(specs.game);
@@ -133,7 +132,7 @@ int main(int argc, char *argv[]){
 void *listener(void *info){
     int tmp;
     socklen_t length;
-    player_t **player = all_players;
+    player_t *player;
     info_t *specs = (info_t *)info;
 
     length = sizeof ( struct sockaddr_in );
@@ -143,15 +142,20 @@ void *listener(void *info){
         if( ! run_Forrest_run ) break;
         if( tmp < 0 ) continue;
 
-        *player = malloc(sizeof **player);
+        player = malloc(sizeof *player);
 
-        (**player).pontos = 0;
-        (**player).socket = tmp;
-        (**player).game = specs->game;
+        player->pontos = 0;
+        player->socket = tmp;
+        player->game = specs->game;
 
-        if( pthread_create(&(**player).thread, NULL, connect_client, *player) ){
-            close((**player).socket);
-            free(*player);
+        player->prev = all_players->prev;
+        player->next = all_players;
+        all_players->prev->next = player;
+        all_players->prev = player;
+
+        if( pthread_create(&player->thread, NULL, connect_client, player) ){
+            close(player->socket);
+            free(player);
             continue;
         }
 

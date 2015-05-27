@@ -277,10 +277,6 @@ int is_sink(navio_t *ship, int size){
 }
 
 void broadcast_game(char *msg){
-    player_t **player = all_players;
-
-    for( int i = 0; i < MAX_PLAYERS; i++ )
-        if( player[i] != NULL )
-            write(player[i]->socket, msg, strlen(msg));
-
+    for( player_t *play = all_players->next; play->id != 0; play = play->next )
+        write(play->socket, msg, strlen(msg));
 }
