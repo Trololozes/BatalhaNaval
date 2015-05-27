@@ -77,6 +77,7 @@ struct jogador{
 typedef struct jogador player_t;
 
 /*  global variables    */
+extern pthread_barrier_t end_game_bar;
 extern player_t *all_players;
 
 /*  function declarations   */
@@ -93,6 +94,8 @@ void finish_units(cell_t, game_t*);
 void game_fire(int, int, player_t*);
 
 int is_sink(navio_t*, int, int);
+
+void game_end(void);
 
 void broadcast_game(char*);
 

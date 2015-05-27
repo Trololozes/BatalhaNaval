@@ -50,19 +50,23 @@ static volatile int connect_c = 0;
 static pthread_mutex_t counter_lock;
 static pthread_mutex_t timeout_lock;
 static pthread_cond_t timeout_cond;
-static pthread_barrier_t listen_bar;
 
 bool run_Forrest_run = true;
-pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t sock_kill_lock;
+pthread_cond_t sock_kill_cond;
+pthread_barrier_t end_game_bar;
 
 player_t *all_players = NULL;
 
 int main(int argc, char *argv[]){
+    const int buff_s = 20;
+    char first_player[buff_s];
     struct sockaddr_in serv_addr;
     pthread_t close_thr;
     pthread_t listen_thr;
     info_t specs;
+
+    memset(first_player, 0, buff_s);
 
     pthread_mutex_init(&counter_lock, NULL);
     pthread_cond_init(&timeout_cond, NULL);
@@ -72,7 +76,7 @@ int main(int argc, char *argv[]){
     pthread_mutex_init(&sock_kill_lock, NULL);
     signal(SIGINT, sighandler);
 
-    pthread_barrier_init(&listen_bar, NULL, 2);
+    pthread_barrier_init(&end_game_bar, NULL, 2);
 
     memset(&serv_addr, 0, sizeof serv_addr);
     serv_addr.sin_family = AF_INET;
@@ -109,9 +113,10 @@ int main(int argc, char *argv[]){
     }
 
     broadcast_game("Shall we play a game?\n");
-    broadcast_game("Turno: Player#1\n");
+    sprintf(first_player, "Turno: Player#%d\n", all_players->next->id);
+    broadcast_game(first_player);
 
-    pthread_barrier_wait(&listen_bar);
+    pthread_barrier_wait(&end_game_bar);
 
     pthread_cancel(close_thr);
 
@@ -171,7 +176,7 @@ void *listener(void *info){
         player++;
     }
 
-    pthread_barrier_wait(&listen_bar);
+    pthread_barrier_wait(&end_game_bar);
 
     return 0;
 }

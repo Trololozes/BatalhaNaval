@@ -28,6 +28,8 @@
 #include <sys/time.h>
 #include "battleship.h"
 
+static int deployed_ships = COU_N + SUB_N + PAV_N + TOR_N;
+
 game_t *game_setup(void){
     game_t *game = malloc(sizeof *game);
     game->torpedeiro = calloc(TOR_N, sizeof *game->torpedeiro);
@@ -248,14 +250,23 @@ void game_fire(int x, int y, player_t *player){
     next = ( player->next->id == 0 ) ? player->next->next : player->next;
 
     if( check_ships ){
-        next = player;
-        points = is_sink(ship, size, width);
+        if( (points = is_sink(ship, size, width)) )
+            deployed_ships--;
+
         strncat(buffer, ( points ) ? " - Afundado!" : " - Atingido!", buff_s);
         player->pontos += points;
+        next = player;
     }
 
     strncat(buffer, "\n", buff_s);
     broadcast_game(buffer);
+
+    if( ! deployed_ships ){
+        game_end();
+        pthread_barrier_wait(&end_game_bar);
+
+        return;
+    }
 
     sprintf(n_round, "Nova rodada - (Pontuacao: %d)Player#%d\n", \
             next->pontos, next->id);
@@ -292,6 +303,23 @@ int is_sink(navio_t *ship, int size, int width){
     }
 
     return points;
+}
+
+void game_end(void){
+    const int buff_s = 256;
+    char buffer[buff_s];
+    char msg[buff_s];
+
+    memset(msg, 0, buff_s);
+
+    for( player_t *play = all_players->next; play->id != 0; play = play->next ){
+        memset(buffer, 0, buff_s);
+
+        sprintf(buffer, "Player#%d -> %d pontos\n", play->id, play->pontos);
+        strncat(msg, buffer, buff_s);
+    }
+
+    broadcast_game(msg);
 }
 
 void broadcast_game(char *msg){
