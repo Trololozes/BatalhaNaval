@@ -28,10 +28,15 @@
 #define MAX_PLAYERS 50
 #define ORDEM 100
 
+#define COU_N 2
 #define SUB_N 3
 #define PAV_N 5
 #define TOR_N 8
-#define COU_N 2
+
+#define COU_W 5
+#define SUB_W 3
+#define PAV_W 3
+#define TOR_W 2
 
 /*  data types  */
 enum celula{
@@ -85,9 +90,9 @@ game_t *game_cleanup(game_t*);
 
 void finish_units(cell_t, game_t*);
 
-int game_fire(int, int, player_t*);
+void game_fire(int, int, player_t*);
 
-int is_sink(navio_t*, int);
+int is_sink(navio_t*, int, int);
 
 void broadcast_game(char*);
 

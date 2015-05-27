@@ -63,25 +63,25 @@ void deploy_units(cell_t ship, game_t *game){
     switch(ship){
         case torpedo:
             points = 15;
-            width = 2;
+            width = TOR_W;
             size = TOR_N;
             boat = game->torpedeiro;
             break;
         case carrier:
             points = 20;
-            width = 3;
+            width = PAV_W;
             size = PAV_N;
             boat = game->porta_aviao;
             break;
         case submarine:
             points = 35;
-            width = 3;
+            width = SUB_W;
             size = SUB_N;
             boat = game->submarino;
             break;
         case battleship:
             points = 50;
-            width = 5;
+            width = COU_W;
             size = COU_N;
             boat = game->couracado;
             break;
@@ -103,7 +103,7 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
     int jump;
     bool from_start = true;
     cell_t *try;
-    cell_t **pos = calloc(width+1, sizeof **pos);
+    cell_t **pos = calloc(width, sizeof **pos);
 
     jump = ( rand() % 2 ) ? 1 : ORDEM;
 
@@ -188,9 +188,10 @@ void finish_units(cell_t ship, game_t *game){
     }
 }
 
-int game_fire(int x, int y, player_t *player){
+void game_fire(int x, int y, player_t *player){
     const int buff_s = 256;
     int size;
+    int width;
     int points;
     char buffer[buff_s];
     char n_round[buff_s];
@@ -202,28 +203,36 @@ int game_fire(int x, int y, player_t *player){
     memset(buffer, 0, buff_s);
     memset(n_round, 0, buff_s);
 
+    points = 0;
+
     target = player->game->grid[x][y];
     player->game->grid[x][y] = hit;
+
+    sprintf(buffer, "[%d, %d] -> ", x, y);
 
     switch(target){
         case torpedo:
             strncat(buffer, "Torpedeiro!", buff_s);
             size = TOR_N;
+            width = TOR_W;
             ship = player->game->torpedeiro;
             break;
         case carrier:
             strncat(buffer, "Porta-Avioes!", buff_s);
             size = PAV_N;
+            width = PAV_W;
             ship = player->game->porta_aviao;
             break;
         case submarine:
             strncat(buffer, "Submarino!", buff_s);;
             size = SUB_N;
+            width = SUB_W;
             ship = player->game->submarino;
             break;
         case battleship:
             strncat(buffer, "Couracado!", buff_s);
             size = COU_N;
+            width = COU_W;
             ship = player->game->couracado;
             break;
         case water:
@@ -231,6 +240,7 @@ int game_fire(int x, int y, player_t *player){
             check_ships = false;
             break;
         case hit:
+            strncat(buffer, "Nope, aqui ja foi atacado antes", buff_s);
             check_ships = false;
             break;
     }
@@ -238,41 +248,47 @@ int game_fire(int x, int y, player_t *player){
     next = ( player->next->id == 0 ) ? player->next->next : player->next;
 
     if( check_ships ){
-        if( (points = is_sink(ship, size)) ){
-            strncat(buffer, " - Afundado!", buff_s);
-            next = player;
-        }
-        else{
-            strncat(buffer, " - Atingido!", buff_s);
-        }
+        next = player;
+        points = is_sink(ship, size, width);
+        strncat(buffer, ( points ) ? " - Afundado!" : " - Atingido!", buff_s);
+        player->pontos += points;
     }
 
     strncat(buffer, "\n", buff_s);
     broadcast_game(buffer);
 
-    sprintf(n_round, "Nova rodada - Player#%d\n", next->id);
+    sprintf(n_round, "Nova rodada - (Pontuacao: %d)Player#%d\n", \
+            next->pontos, next->id);
     broadcast_game(n_round);
 
-    return points;
+    return;
 }
 
-int is_sink(navio_t *ship, int size){
-    int i;
+int is_sink(navio_t *ship, int size, int width){
+    int c;
     int points = 0;
-    cell_t *pos;
+    cell_t *pos = NULL;
+    navio_t *head = NULL;
 
-    for( i = 0; i < size; i++ ){
-        if( ship[i].sink )
+    for( int n_ship = 0; n_ship < size; n_ship++ ){
+        if( ship[n_ship].sink )
             continue;
-        for( pos = *(ship[i].posicao); pos != NULL; pos++ ){
-            if( *pos != hit )
-                break;
+
+        c = 0;
+
+        pos = *ship[n_ship].posicao;
+        head = ship + n_ship;
+
+        for( int ship_w = 0; ship_w < width; ship_w++ ){
+            if( pos[ship_w] == hit )
+                c++;
         }
-        if( pos == NULL )
-            ship[i].sink = true;
-            points = ship[i].points;
-            ship[i].points = 0;
+
+        if( c == width ){
+            head->sink = true;
+            points = head->points;
             break;
+        }
     }
 
     return points;

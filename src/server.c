@@ -193,7 +193,7 @@ void *connect_client(void *player){
     while( (read_len = recv(me->socket, msg_in, size, 0)) > 0 ){
         sscanf(msg_in, "%d*%d", &linha, &coluna);
 
-        me->pontos += game_fire(linha, coluna, me);
+        game_fire(linha, coluna, me);
 
         memset(msg_in, 0, size);
     }
