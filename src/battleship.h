@@ -68,11 +68,13 @@ struct jogador{
     int socket;
     pthread_t thread;
     game_t *game;
+    struct jogador *prev;
+    struct jogador *next;
 };
 typedef struct jogador player_t;
 
 /*  global variables    */
-extern player_t *all_players[MAX_PLAYERS];
+extern player_t *all_players;
 
 /*  function declarations   */
 game_t *game_setup(void);
@@ -85,8 +87,10 @@ game_t *game_cleanup(game_t*);
 
 void finish_units(cell_t, game_t*);
 
-int game_fire(int, int, game_t*);
+int game_fire(int, int, player_t*);
 
-void *broadcast_game(void*);
+int is_sink(navio_t*, int);
+
+void broadcast_game(char*);
 
 #endif

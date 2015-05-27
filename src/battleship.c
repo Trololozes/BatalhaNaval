@@ -21,15 +21,12 @@
 
 #include <sys/socket.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
 #include "battleship.h"
-
-static char buffer[256];
-static pthread_mutex_t game_msg_lock;
-static pthread_cond_t game_msg_cond;
 
 game_t *game_setup(void){
     game_t *game = malloc(sizeof *game);
@@ -37,9 +34,6 @@ game_t *game_setup(void){
     game->porta_aviao = calloc(PAV_N, sizeof *game->porta_aviao);
     game->submarino = calloc(SUB_N, sizeof *game->submarino);
     game->couracado = calloc(COU_N, sizeof *game->couracado);
-
-    pthread_mutex_init(&game_msg_lock, NULL);
-    pthread_cond_init(&game_msg_cond, NULL);
 
     for( int i = 0; i < ORDEM; i++ ){
         for( int j = 0; j < ORDEM; j++ ){
@@ -158,9 +152,6 @@ game_t *game_cleanup(game_t *game){
 
     free(game);
 
-    pthread_mutex_destroy(&game_msg_lock);
-    pthread_cond_destroy(&game_msg_cond);
-
     return NULL;
 }
 
@@ -197,44 +188,78 @@ void finish_units(cell_t ship, game_t *game){
     }
 }
 
-int game_fire(int x, int y, game_t *game){
-    int i;
+int game_fire(int x, int y, player_t *player){
+    const int buff_s = 256;
     int size;
     int points;
-    char *output;
+    char buffer[buff_s];
+    char n_round[buff_s];
+    bool check_ships = true;
     cell_t target;
-    cell_t *pos;
     navio_t *ship;
+    player_t *next;
 
-    target = game->grid[x][y];
-    game->grid[x][y] = hit;
+    memset(buffer, 0, buff_s);
+    memset(n_round, 0, buff_s);
+
+    target = player->game->grid[x][y];
+    player->game->grid[x][y] = hit;
 
     switch(target){
         case torpedo:
-            output = "Torpedeiro!";
+            strncat(buffer, "Torpedeiro!", buff_s);
             size = TOR_N;
-            ship = game->torpedeiro;
+            ship = player->game->torpedeiro;
             break;
         case carrier:
-            output = "Porta-avioes!";
+            strncat(buffer, "Porta-Avioes!", buff_s);
             size = PAV_N;
-            ship = game->porta_aviao;
+            ship = player->game->porta_aviao;
             break;
         case submarine:
-            output = "Submarino!";
+            strncat(buffer, "Submarino!", buff_s);;
             size = SUB_N;
-            ship = game->submarino;
+            ship = player->game->submarino;
             break;
         case battleship:
-            output = "Couracado!";
+            strncat(buffer, "Couracado!", buff_s);
             size = COU_N;
-            ship = game->couracado;
+            ship = player->game->couracado;
             break;
         case water:
-            return 0;
+            strncat(buffer, "Splash!", buff_s);
+            check_ships = false;
+            break;
         case hit:
-            return 0;
+            check_ships = false;
+            break;
     }
+
+    next = ( player->next->id == 0 ) ? player->next->next : player->next;
+
+    if( check_ships ){
+        if( (points = is_sink(ship, size)) ){
+            strncat(buffer, " - Afundado!", buff_s);
+            next = player;
+        }
+        else{
+            strncat(buffer, " - Atingido!", buff_s);
+        }
+    }
+
+    strncat(buffer, "\n", buff_s);
+    broadcast_game(buffer);
+
+    sprintf(n_round, "Nova rodada - Player#%d\n", next->id);
+    broadcast_game(n_round);
+
+    return points;
+}
+
+int is_sink(navio_t *ship, int size){
+    int i;
+    int points = 0;
+    cell_t *pos;
 
     for( i = 0; i < size; i++ ){
         if( ship[i].sink )
@@ -244,36 +269,16 @@ int game_fire(int x, int y, game_t *game){
                 break;
         }
         if( pos == NULL )
+            ship[i].sink = true;
+            points = ship[i].points;
+            ship[i].points = 0;
             break;
     }
-
-    pthread_mutex_lock(&game_msg_lock);
-    strncat(buffer, output, 256);
-
-    pthread_cond_broadcast(&game_msg_cond);
-    pthread_mutex_unlock(&game_msg_lock);
-
-    ship[i].sink = true;
-    points = ship[i].points;
-    ship[i].points = 0;
 
     return points;
 }
 
-void *broadcast_game(void *conn){
-    int **socks = conn;
-
-    while( true ){
-        pthread_mutex_lock(&game_msg_lock);
-        pthread_cond_wait(&game_msg_cond, &game_msg_lock);
-
-        for( int i = 0; i < MAX_PLAYERS; i++ )
-            if( socks[i] != NULL )
-                write(*socks[i], buffer, strlen(buffer));
-
-        memset(buffer, 0, 256);
-        pthread_mutex_unlock(&game_msg_lock);
-    }
-
-    return 0;
+void broadcast_game(char *msg){
+    for( player_t *play = all_players->next; play->id != 0; play = play->next )
+        write(play->socket, msg, strlen(msg));
 }
