@@ -200,6 +200,11 @@ void *connect_client(void *player){
 
     pthread_mutex_lock(&counter_lock);
     fprintf(stdout, "Connection #%d closed\n", me->id);
+
+    me->next->prev = me->prev;
+    me->prev->next = me->next;
+    free(me);
+
     connect_c--;
     pthread_mutex_unlock(&counter_lock);
 
