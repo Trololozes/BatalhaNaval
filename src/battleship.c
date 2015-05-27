@@ -53,7 +53,12 @@ void deploy_units(cell_t ship, game_t *game){
     int points;
     int width;
     int size;
+    struct timeval precision;
     navio_t *boat;
+
+    gettimeofday(&precision, NULL);
+    srand((precision.tv_sec) + (precision.tv_usec));
+    rand();
 
     switch(ship){
         case torpedo:
@@ -99,11 +104,6 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
     bool from_start = true;
     cell_t *try;
     cell_t **pos = calloc(width+1, sizeof **pos);
-
-    gettimeofday(&precision_t,NULL);
-
-    srand((precision_t.tv_sec) + (precision_t.tv_usec));
-    rand();
 
     jump = ( rand() % 2 ) ? 1 : ORDEM;
 
