@@ -109,18 +109,18 @@ int main(int argc, char *argv[]){
         sleep(15);
 
         if( connect_c )
-            broadcast_game("Aguardando jogadores...\n");
+            game_broadcast("Aguardando jogadores...\n");
     }
 
-    broadcast_game("Shall we play a game?\n");
+    game_broadcast("Shall we play a game?\n");
     sprintf(first_player, "Turno: Player#%d\n", all_players->next->id);
-    broadcast_game(first_player);
+    game_broadcast(first_player);
 
     pthread_barrier_wait(&end_game_bar);
 
     pthread_cancel(close_thr);
 
-    broadcast_game("Server down\n");
+    game_broadcast("Server down\n");
 
     close(specs.sock);
     specs.game = game_cleanup(specs.game);

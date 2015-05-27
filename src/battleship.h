@@ -97,6 +97,6 @@ int is_sink(navio_t*, int, int);
 
 void game_end(void);
 
-void broadcast_game(char*);
+void game_broadcast(char*);
 
 #endif

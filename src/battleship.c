@@ -259,7 +259,7 @@ void game_fire(int x, int y, player_t *player){
     }
 
     strncat(buffer, "\n", buff_s);
-    broadcast_game(buffer);
+    game_broadcast(buffer);
 
     if( ! deployed_ships ){
         game_end();
@@ -270,7 +270,7 @@ void game_fire(int x, int y, player_t *player){
 
     sprintf(n_round, "Nova rodada - (Pontuacao: %d)Player#%d\n", \
             next->pontos, next->id);
-    broadcast_game(n_round);
+    game_broadcast(n_round);
 
     return;
 }
@@ -319,10 +319,10 @@ void game_end(void){
         strncat(msg, buffer, buff_s);
     }
 
-    broadcast_game(msg);
+    game_broadcast(msg);
 }
 
-void broadcast_game(char *msg){
+void game_broadcast(char *msg){
     for( player_t *play = all_players->next; play->id != 0; play = play->next )
         write(play->socket, msg, strlen(msg));
 }
