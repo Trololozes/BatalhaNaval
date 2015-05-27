@@ -153,16 +153,26 @@ void *listener(void *info){
         all_players->prev->next = player;
         all_players->prev = player;
 
+        pthread_mutex_lock(&counter_lock);
+        player->id = connect_c + 1;
+
         if( pthread_create(&player->thread, NULL, connect_client, player) ){
             close(player->socket);
             free(player);
+
+            pthread_mutex_unlock(&counter_lock);
+
             continue;
         }
+
+        connect_c++;
+        pthread_mutex_unlock(&counter_lock);
 
         player++;
     }
 
     pthread_barrier_wait(&listen_bar);
+
     return 0;
 }
 
@@ -174,11 +184,6 @@ void *connect_client(void *player){
     char msg_in[size];
     char msg_out[size];
     player_t *me = (player_t *)player;
-
-    pthread_mutex_lock(&counter_lock);
-    me->id = connect_c + 1;
-    connect_c++;
-    pthread_mutex_unlock(&counter_lock);
 
     sprintf(msg_out, "Connection Successfull!!\n"
         "You are Player#%d\n", me->id);
