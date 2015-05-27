@@ -105,7 +105,7 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
     int jump;
     bool from_start = true;
     cell_t *try;
-    cell_t **pos = calloc(width, sizeof **pos);
+    cell_t **pos = calloc(width, sizeof *pos);
 
     jump = ( rand() % 2 ) ? 1 : ORDEM;
 
