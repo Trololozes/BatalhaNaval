@@ -21,6 +21,7 @@
 
 #include <sys/socket.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -185,40 +186,43 @@ void finish_units(cell_t ship, game_t *game){
     }
 }
 
-int game_fire(int x, int y, game_t *game){
+int game_fire(int x, int y, player_t *player){
     const int buff_s = 256;
     int size;
     int points;
     char buffer[buff_s];
+    char n_round[buff_s];
     bool check_ships = true;
     cell_t target;
     navio_t *ship;
+    player_t *next;
 
     memset(buffer, 0, buff_s);
+    memset(n_round, 0, buff_s);
 
-    target = game->grid[x][y];
-    game->grid[x][y] = hit;
+    target = player->game->grid[x][y];
+    player->game->grid[x][y] = hit;
 
     switch(target){
         case torpedo:
             strncat(buffer, "Torpedeiro!", buff_s);
             size = TOR_N;
-            ship = game->torpedeiro;
+            ship = player->game->torpedeiro;
             break;
         case carrier:
             strncat(buffer, "Porta-Avioes!", buff_s);
             size = PAV_N;
-            ship = game->porta_aviao;
+            ship = player->game->porta_aviao;
             break;
         case submarine:
             strncat(buffer, "Submarino!", buff_s);;
             size = SUB_N;
-            ship = game->submarino;
+            ship = player->game->submarino;
             break;
         case battleship:
             strncat(buffer, "Couracado!", buff_s);
             size = COU_N;
-            ship = game->couracado;
+            ship = player->game->couracado;
             break;
         case water:
             strncat(buffer, "Splash!", buff_s);
@@ -229,27 +233,23 @@ int game_fire(int x, int y, game_t *game){
             break;
     }
 
+    next = ( player->next->id == 0 ) ? player->next->next : player->next;
+
     if( check_ships ){
         if( (points = is_sink(ship, size)) ){
             strncat(buffer, " - Afundado!", buff_s);
-            /*
-             *  proximo turno do mesmo jogador
-             */
+            next = player;
         }
         else{
             strncat(buffer, " - Atingido!", buff_s);
-            /*
-             * proximo turno do proximo jogador
-             */
         }
     }
 
     strncat(buffer, "\n", buff_s);
-
     broadcast_game(buffer);
-    /*
-     *  inicia novo turno
-     */
+
+    sprintf(n_round, "Nova rodada - Player#%d\n", next->id);
+    broadcast_game(n_round);
 
     return points;
 }
