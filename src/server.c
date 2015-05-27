@@ -131,21 +131,23 @@ int main(int argc, char *argv[]){
 }
 
 void *listener(void *info){
-    socklen_t sock_len;
+    int tmp;
+    socklen_t length;
     player_t **player = all_players;
     info_t *specs = (info_t *)info;
 
+    length = sizeof ( struct sockaddr_in );
+
     while( run_Forrest_run ){
-        *player = malloc(sizeof **player);
-        sock_len = sizeof ( struct sockaddr_in );
-
-        (**player).game = specs->game;
-        (**player).pontos = 0;
-
-        (**player).socket = \
-            accept(specs->sock, (struct sockaddr *)&specs->addr, &sock_len);
+        tmp = accept(specs->sock, (struct sockaddr *)&specs->addr, &length);
         if( ! run_Forrest_run ) break;
-        if( (**player).socket < 0 ) continue;
+        if( tmp < 0 ) continue;
+
+        *player = malloc(sizeof **player);
+
+        (**player).pontos = 0;
+        (**player).socket = tmp;
+        (**player).game = specs->game;
 
         if( pthread_create(&(**player).thread, NULL, connect_client, *player) ){
             close((**player).socket);
