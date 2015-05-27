@@ -111,7 +111,7 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
         if( from_start ){
             x = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
             y = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
-            try = grid + x + y;
+            try = grid + x + y * ORDEM;
             from_start = false;
         }
         else{
