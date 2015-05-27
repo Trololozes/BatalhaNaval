@@ -85,6 +85,8 @@ void finish_units(cell_t, game_t*);
 
 int game_fire(int, int, game_t*);
 
+int is_sink(navio_t*, int);
+
 void broadcast_game(char*);
 
 #endif

@@ -186,43 +186,78 @@ void finish_units(cell_t ship, game_t *game){
 }
 
 int game_fire(int x, int y, game_t *game){
-    int i;
+    const int buff_s = 256;
     int size;
     int points;
-    char *output;
+    char buffer[buff_s];
+    bool check_ships = true;
     cell_t target;
-    cell_t *pos;
     navio_t *ship;
+
+    memset(buffer, 0, buff_s);
 
     target = game->grid[x][y];
     game->grid[x][y] = hit;
 
     switch(target){
         case torpedo:
-            output = "Torpedeiro!";
+            strncat(buffer, "Torpedeiro!", buff_s);
             size = TOR_N;
             ship = game->torpedeiro;
             break;
         case carrier:
-            output = "Porta-avioes!";
+            strncat(buffer, "Porta-Avioes!", buff_s);
             size = PAV_N;
             ship = game->porta_aviao;
             break;
         case submarine:
-            output = "Submarino!";
+            strncat(buffer, "Submarino!", buff_s);;
             size = SUB_N;
             ship = game->submarino;
             break;
         case battleship:
-            output = "Couracado!";
+            strncat(buffer, "Couracado!", buff_s);
             size = COU_N;
             ship = game->couracado;
             break;
         case water:
-            return 0;
+            strncat(buffer, "Splash!", buff_s);
+            check_ships = false;
+            break;
         case hit:
-            return 0;
+            check_ships = false;
+            break;
     }
+
+    if( check_ships ){
+        if( (points = is_sink(ship, size)) ){
+            strncat(buffer, " - Afundado!", buff_s);
+            /*
+             *  proximo turno do mesmo jogador
+             */
+        }
+        else{
+            strncat(buffer, " - Atingido!", buff_s);
+            /*
+             * proximo turno do proximo jogador
+             */
+        }
+    }
+
+    strncat(buffer, "\n", buff_s);
+
+    broadcast_game(buffer);
+    /*
+     *  inicia novo turno
+     */
+
+    return points;
+}
+
+int is_sink(navio_t *ship, int size){
+    int i;
+    int points = 0;
+    cell_t *pos;
 
     for( i = 0; i < size; i++ ){
         if( ship[i].sink )
@@ -232,16 +267,11 @@ int game_fire(int x, int y, game_t *game){
                 break;
         }
         if( pos == NULL )
+            ship[i].sink = true;
+            points = ship[i].points;
+            ship[i].points = 0;
             break;
     }
-
-    /*
-     *  broadcast_game( , "\n");
-     */
-
-    ship[i].sink = true;
-    points = ship[i].points;
-    ship[i].points = 0;
 
     return points;
 }

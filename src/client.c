@@ -87,12 +87,7 @@ int main(int argc, char *argv[]){
 
     memset(buff, 0, size);
     while( (read_len = recv(sock, buff, size, 0)) > 0 ){
-        if( ! id ){
-            sscanf(buff, "%*[^#]#%d", &id);
-        }
-        else{
-            sscanf(buff, "%d#%*s", &turn);
-        }
+        sscanf(buff, "%*[^#]#%d", ( ! id ) ? &id : &turn);
 
         fputs(buff, stdout);
         memset(buff, 0, size);
