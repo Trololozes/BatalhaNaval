@@ -201,6 +201,7 @@ void game_fire(int x, int y, player_t *player){
     int size;
     int width;
     int points;
+    int kill_switch = 0;
     char buffer[buff_s];
     char n_round[buff_s];
     bool check_ships = true;
@@ -253,7 +254,17 @@ void game_fire(int x, int y, player_t *player){
             break;
     }
 
-    next = ( player->next->id == 0 ) ? player->next->next : player->next;
+    player->tiros--;
+
+    do{
+        if( player->next->id == 0 ){
+            next = player->next->next;
+            kill_switch++;
+        }
+        else{
+            next = player->next;
+        }
+    }while( next->tiros == 0 && kill_switch < 2 );
 
     if( check_ships ){
         if( (points = is_sink(ship, size, width)) )
@@ -267,15 +278,15 @@ void game_fire(int x, int y, player_t *player){
     strncat(buffer, "\n", buff_s);
     game_broadcast(buffer);
 
-    if( ! deployed_ships ){
+    if( ! deployed_ships || kill_switch == 2 ){
         game_end();
         pthread_barrier_wait(&end_game_bar);
 
         return;
     }
 
-    sprintf(n_round, "Nova rodada - (Pontuacao: %d)Player#%d\n", \
-            next->pontos, next->id);
+    sprintf(n_round, "Nova rodada - (Pontuacao: %d | Tiros: %d)Player#%d\n",\
+            next->pontos, next->tiros, next->id);
     game_broadcast(n_round);
 
     return;

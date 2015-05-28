@@ -139,7 +139,7 @@ int main(int argc, char *argv[]){
 
     pthread_cancel(close_thr);
 
-    game_broadcast("Server down\n");
+    game_broadcast("Server desligando... Fim de jogo!\n");
 
     close(specs.sock);
 
@@ -183,6 +183,7 @@ void *listener(void *info){
 
         player = malloc(sizeof *player);
 
+        player->tiros = MAX_PLAYERS_SHOTS;
         player->pontos = 0;
         player->socket = tmp;
         player->game = specs->game;

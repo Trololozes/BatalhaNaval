@@ -28,8 +28,9 @@
 /*
  *  Global constants
  */
-#define MAX_PLAYERS 50
 #define ORDEM 100
+#define MAX_PLAYERS 50
+#define MAX_PLAYERS_SHOTS 20
 
 #define COU_N 2
 #define SUB_N 3
@@ -72,6 +73,7 @@ typedef struct game game_t;
 
 struct player{
     int id;
+    int tiros;
     int pontos;
     int socket;
     pthread_t thread;
