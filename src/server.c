@@ -48,16 +48,16 @@ pthread_mutex_t sock_kill_lock;
 pthread_cond_t sock_kill_cond;
 pthread_barrier_t end_game_bar;
 player_t *all_players = NULL;
+game_t *game_ptr = NULL;
 
 /*
  *  Data types
  */
-struct info{
+struct local_info{
     int sock;
     struct sockaddr_in addr;
-    game_t *game;
 };
-typedef struct info info_t;
+typedef struct local_info local_info_t;
 
 /*
  *  Global variables within this file
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in serv_addr;
     pthread_t close_thr;
     pthread_t listen_thr;
-    info_t specs;
+    local_info_t specs;
 
     memset(first_player, 0, BUFF_S);
 
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]){
     pthread_create(&close_thr, NULL, close_socket, &specs.sock);
 
     stack_up(MAX_PLAYERS);
-    specs.game = game_setup();
+    game_setup();
 
     all_players = malloc(sizeof *all_players);
     all_players->id = 0;
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
     close(specs.sock);
 
     stack_destroy();
-    specs.game = game_cleanup(specs.game);
+    game_cleanup();
 
     pthread_mutex_destroy(&counter_lock);
     pthread_mutex_destroy(&sock_kill_lock);
@@ -162,7 +162,7 @@ void *listener(void *info){
     char *sorry;
     socklen_t length;
     player_t *player;
-    info_t *specs = (info_t *)info;
+    local_info_t *specs = (local_info_t *)info;
 
     length = sizeof ( struct sockaddr_in );
 
@@ -185,7 +185,6 @@ void *listener(void *info){
         player->tiros = MAX_PLAYERS_SHOTS;
         player->pontos = 0;
         player->socket = tmp;
-        player->game = specs->game;
 
         player->prev = all_players->prev;
         player->next = all_players;

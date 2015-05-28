@@ -94,7 +94,6 @@ struct player{
     int pontos;
     int socket;
     pthread_t thread;
-    game_t *game;
     struct player *prev;
     struct player *next;
 };
@@ -105,21 +104,22 @@ typedef struct player player_t;
  */
 extern pthread_barrier_t end_game_bar;
 extern player_t *all_players;
+extern game_t *game_ptr;
 
 /*
  *  Functions declarations
  */
-game_t *game_setup(void);
+void game_setup(void);
 
-void get_ship_specs(ship_specs_t*, game_t*, cell_t);
+void get_ship_specs(ship_specs_t*, cell_t);
 
-void deploy_units(cell_t, game_t*);
+void deploy_units(cell_t);
 
 cell_t **place_on_grid(cell_t, int, cell_t*);
 
-game_t *game_cleanup(game_t*);
+void game_cleanup(void);
 
-void finish_units(cell_t, game_t*);
+void finish_units(cell_t);
 
 void game_fire(int, int, player_t*);
 
