@@ -31,18 +31,33 @@
 #include <errno.h>
 #include "signal_handler.h"
 
+/*
+ *  Global constants
+ */
 #define PORT 5824
 
-void *outgoing_msgs(void*);
-
-static const int size = 256;
-static pthread_mutex_t send_lock;
-static pthread_cond_t send_cond;
-
+/*
+ *  External global variables
+ */
 bool run_Forrest_run = true;
 pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 
+/*
+ *  Global variables within this file
+ */
+static const int size = 256;
+static pthread_mutex_t send_lock;
+static pthread_cond_t send_cond;
+
+/*
+ *  Functions declarations
+ */
+void *outgoing_msgs(void*);
+
+/*
+ *  Main definition
+ */
 int main(int argc, char *argv[]){
     int sock;
     int read_len;
@@ -107,6 +122,9 @@ int main(int argc, char *argv[]){
     exit(EXIT_SUCCESS);
 }
 
+/*
+ *  Functions definitions
+ */
 void *outgoing_msgs(void *sock){
     int l_sock = *(int *)sock;
     int linha;

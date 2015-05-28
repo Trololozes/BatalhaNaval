@@ -23,6 +23,9 @@
 #include <stdbool.h>
 #include "signal_handler.h"
 
+/*
+ *  Functions definitions
+ */
 void sighandler(int sig){
     pthread_mutex_lock(&sock_kill_lock);
     pthread_cond_broadcast(&sock_kill_cond);

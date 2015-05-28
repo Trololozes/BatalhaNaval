@@ -25,6 +25,9 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+/*
+ *  Global constants
+ */
 #define MAX_PLAYERS 50
 #define ORDEM 100
 
@@ -38,7 +41,9 @@
 #define PAV_W 3
 #define TOR_W 2
 
-/*  data types  */
+/*
+ *  Data types
+ */
 enum cell{
     hit,
     water,
@@ -76,11 +81,15 @@ struct player{
 };
 typedef struct player player_t;
 
-/*  global variables    */
+/*
+ *  External global variables
+ */
 extern pthread_barrier_t end_game_bar;
 extern player_t *all_players;
 
-/*  function declarations   */
+/*
+ *  Functions declarations
+ */
 game_t *game_setup(void);
 
 void deploy_units(cell_t, game_t*);

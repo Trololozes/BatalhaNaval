@@ -25,10 +25,16 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+/*
+ *  External global variables
+ */
 extern bool run_Forrest_run;
 extern pthread_mutex_t sock_kill_lock;
 extern pthread_cond_t sock_kill_cond;
 
+/*
+ *  Functions declarations
+ */
 void sighandler(int);
 
 void *close_socket(void*);

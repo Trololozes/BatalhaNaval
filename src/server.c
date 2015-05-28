@@ -33,9 +33,24 @@
 #include "signal_handler.h"
 #include "battleship.h"
 
+/*
+ *  Global constants
+ */
 #define PORT 5824
 #define PENDING 5
 
+/*
+ *  External global variables
+ */
+bool run_Forrest_run = true;
+pthread_mutex_t sock_kill_lock;
+pthread_cond_t sock_kill_cond;
+pthread_barrier_t end_game_bar;
+player_t *all_players = NULL;
+
+/*
+ *  Data types
+ */
 struct info{
     int sock;
     struct sockaddr_in addr;
@@ -43,21 +58,23 @@ struct info{
 };
 typedef struct info info_t;
 
-void *listener(void*);
-void *connect_client(void*);
-
+/*
+ *  Global variables within this file
+ */
 static volatile int connect_c = 0;
 static pthread_mutex_t counter_lock;
 static pthread_mutex_t timeout_lock;
 static pthread_cond_t timeout_cond;
 
-bool run_Forrest_run = true;
-pthread_mutex_t sock_kill_lock;
-pthread_cond_t sock_kill_cond;
-pthread_barrier_t end_game_bar;
+/*
+ *  Functions definitions
+ */
+void *listener(void*);
+void *connect_client(void*);
 
-player_t *all_players = NULL;
-
+/*
+ *  Main definition
+ */
 int main(int argc, char *argv[]){
     const int buff_s = 20;
     char first_player[buff_s];
@@ -134,6 +151,9 @@ int main(int argc, char *argv[]){
     exit(EXIT_SUCCESS);
 }
 
+/*
+ *  Functions definitions
+ */
 void *listener(void *info){
     int tmp;
     socklen_t length;

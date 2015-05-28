@@ -28,8 +28,14 @@
 #include <sys/time.h>
 #include "battleship.h"
 
+/*
+ *  Global variable within this file
+ */
 static int deployed_ships = COU_N + SUB_N + PAV_N + TOR_N;
 
+/*
+ *  Functions definitions
+ */
 game_t *game_setup(void){
     game_t *game = malloc(sizeof *game);
     game->torpedeiro = calloc(TOR_N, sizeof *game->torpedeiro);
