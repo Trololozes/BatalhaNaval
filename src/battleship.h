@@ -39,7 +39,7 @@
 #define TOR_W 2
 
 /*  data types  */
-enum celula{
+enum cell{
     hit,
     water,
     torpedo,
@@ -47,7 +47,7 @@ enum celula{
     submarine,
     battleship
 };
-typedef enum celula cell_t;
+typedef enum cell cell_t;
 
 struct ship{
     int points;
@@ -56,25 +56,25 @@ struct ship{
 };
 typedef struct ship ship_t;
 
-struct jogo{
+struct game{
     ship_t *torpedeiro;
     ship_t *porta_aviao;
     ship_t *submarino;
     ship_t *couracado;
     cell_t grid[ORDEM][ORDEM];
 };
-typedef struct jogo game_t;
+typedef struct game game_t;
 
-struct jogador{
+struct player{
     int id;
     int pontos;
     int socket;
     pthread_t thread;
     game_t *game;
-    struct jogador *prev;
-    struct jogador *next;
+    struct player *prev;
+    struct player *next;
 };
-typedef struct jogador player_t;
+typedef struct player player_t;
 
 /*  global variables    */
 extern pthread_barrier_t end_game_bar;
