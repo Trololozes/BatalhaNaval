@@ -57,50 +57,61 @@ game_t *game_setup(void){
     return game;
 }
 
+void get_ship_specs(ship_specs_t *specs, game_t *game, cell_t cell){
+    switch(cell){
+        case torpedo:
+            specs->points = TOR_P;
+            specs->width = TOR_W;
+            specs->fleet_of = TOR_N;
+            specs->ship_ptr = game->torpedeiro;
+            sprintf(specs->name, "Torpedeiro!");
+            break;
+        case carrier:
+            specs->points = PAV_P;
+            specs->width = PAV_W;
+            specs->fleet_of = PAV_N;
+            specs->ship_ptr = game->porta_aviao;
+            sprintf(specs->name, "Porta Avioes!");
+            break;
+        case submarine:
+            specs->points = SUB_P;
+            specs->width = SUB_W;
+            specs->fleet_of = SUB_N;
+            specs->ship_ptr = game->submarino;
+            sprintf(specs->name, "Submarino!");
+            break;
+        case battleship:
+            specs->points = COU_P;
+            specs->width = COU_W;
+            specs->fleet_of = COU_N;
+            specs->ship_ptr = game->couracado;
+            sprintf(specs->name, "Couracado!");
+            break;
+        default:
+            specs->points = 0;;
+            specs->width = 0;;
+            specs->fleet_of = 0;;
+            specs->ship_ptr = NULL;
+            memset(specs->name, 0, BUFF_S);
+            break;
+    }
+}
+
 void deploy_units(cell_t ship, game_t *game){
-    int points;
-    int width;
-    int size;
     struct timeval precision;
-    ship_t *boat;
+    ship_specs_t specs;
 
     gettimeofday(&precision, NULL);
     srand((precision.tv_sec) + (precision.tv_usec));
     rand();
 
-    switch(ship){
-        case torpedo:
-            points = 15;
-            width = TOR_W;
-            size = TOR_N;
-            boat = game->torpedeiro;
-            break;
-        case carrier:
-            points = 20;
-            width = PAV_W;
-            size = PAV_N;
-            boat = game->porta_aviao;
-            break;
-        case submarine:
-            points = 35;
-            width = SUB_W;
-            size = SUB_N;
-            boat = game->submarino;
-            break;
-        case battleship:
-            points = 50;
-            width = COU_W;
-            size = COU_N;
-            boat = game->couracado;
-            break;
-        default:
-            return;
-    }
+    get_ship_specs(&specs, game, ship);
 
-    for( int i = 0; i < size; i++ ){
-        boat[i].points = points;
-        boat[i].sink = false;
-        boat[i].posicao = place_on_grid(ship, width, &(game->grid[0][0]));
+    for( int i = 0; i < specs.fleet_of; i++ ){
+        specs.ship_ptr[i].points = specs.points;
+        specs.ship_ptr[i].sink = false;
+        specs.ship_ptr[i].posicao = \
+            place_on_grid(ship, specs.width, &(game->grid[0][0]));
     }
 }
 
@@ -164,114 +175,65 @@ game_t *game_cleanup(game_t *game){
 }
 
 void finish_units(cell_t ship, game_t *game){
-    int size;
-    ship_t *boat;
+    ship_specs_t specs;
 
-    switch(ship){
-        case torpedo:
-            size = TOR_N;
-            boat = game->torpedeiro;
-            break;
-        case carrier:
-            size = PAV_N;
-            boat = game->porta_aviao;
-            break;
-        case submarine:
-            size = SUB_N;
-            boat = game->submarino;
-            break;
-        case battleship:
-            size = COU_N;
-            boat = game->couracado;
-            break;
-        default:
-            return;
-    }
+    get_ship_specs(&specs, game, ship);
 
-    for( int i = 0; i < size; i++ ){
-        boat[i].points = 0;;
-        boat[i].sink = false;
-        free(boat[i].posicao);
-        boat[i].posicao = NULL;
+    for( int i = 0; i < specs.fleet_of; i++ ){
+        specs.ship_ptr[i].points = 0;;
+        specs.ship_ptr[i].sink = false;
+        free(specs.ship_ptr[i].posicao);
+        specs.ship_ptr[i].posicao = NULL;
     }
 }
 
 void game_fire(int x, int y, player_t *player){
-    int size;
-    int width;
     int points;
     int kill_switch = 0;
     char buffer[BUFF_S];
     char n_round[BUFF_S];
-    bool check_ships = true;
     cell_t target;
-    ship_t *ship;
     player_t *next;
+    ship_specs_t specs;
 
     memset(buffer, 0, BUFF_S);
     memset(n_round, 0, BUFF_S);
 
-    points = 0;
-
     target = player->game->grid[x][y];
     player->game->grid[x][y] = hit;
-
-    sprintf(buffer, "[%d, %d] -> ", x, y);
-
-    switch(target){
-        case torpedo:
-            strncat(buffer, "Torpedeiro!", BUFF_S);
-            size = TOR_N;
-            width = TOR_W;
-            ship = player->game->torpedeiro;
-            break;
-        case carrier:
-            strncat(buffer, "Porta-Avioes!", BUFF_S);
-            size = PAV_N;
-            width = PAV_W;
-            ship = player->game->porta_aviao;
-            break;
-        case submarine:
-            strncat(buffer, "Submarino!", BUFF_S);;
-            size = SUB_N;
-            width = SUB_W;
-            ship = player->game->submarino;
-            break;
-        case battleship:
-            strncat(buffer, "Couracado!", BUFF_S);
-            size = COU_N;
-            width = COU_W;
-            ship = player->game->couracado;
-            break;
-        case water:
-            strncat(buffer, "Splash!", BUFF_S);
-            check_ships = false;
-            break;
-        case hit:
-            strncat(buffer, "Nope, aqui ja foi atacado antes", BUFF_S);
-            check_ships = false;
-            break;
-    }
-
     player->tiros--;
 
-    do{
-        if( player->next->id == 0 ){
-            next = player->next->next;
-            kill_switch++;
-        }
-        else{
-            next = player->next;
-        }
-    }while( next->tiros == 0 && kill_switch < 2 );
+    sprintf(buffer, "[%dx%d] -> ", x, y);
 
-    if( check_ships ){
-        if( (points = is_sink(ship, size, width)) )
-            deployed_ships--;
+    get_ship_specs(&specs, player->game, target);
 
-        strncat(buffer, ( points ) ? " - Afundado!" : " - Atingido!", BUFF_S);
-        player->pontos += points;
-        next = player;
+    switch(target){
+        case hit:
+            strncat(buffer, "Ja dispararam aqui... entao,", BUFF_S);
+
+        case water:
+            strncat(buffer, "Splash", BUFF_S);
+
+            do{
+                if( player->next->id == 0 ){
+                    next = player->next->next;
+                    kill_switch++;
+                }
+                else{
+                    next = player->next;
+                }
+            }while( next->tiros == 0 && kill_switch < 2 );
+            break;
+
+        default:
+            if( (points = is_sink(specs.ship_ptr, specs.fleet_of, specs.width)) )
+                deployed_ships--;
+
+            strncat(buffer, specs.name, BUFF_S);
+            strncat(buffer, (points) ? " - Afundado!" : " - Atingido!", BUFF_S);
+            player->pontos += points;
+            next = player;
+            break;
     }
 
     strncat(buffer, "\n", BUFF_S);

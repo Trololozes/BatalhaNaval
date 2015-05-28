@@ -35,14 +35,20 @@
 #define MAX_PLAYERS_SHOTS 20
 
 #define COU_N 2
-#define SUB_N 3
-#define PAV_N 5
-#define TOR_N 8
-
 #define COU_W 5
+#define COU_P 50
+
+#define SUB_N 3
 #define SUB_W 3
+#define SUB_P 35
+
+#define PAV_N 5
 #define PAV_W 3
+#define PAV_P 20
+
+#define TOR_N 8
 #define TOR_W 2
+#define TOR_P 15
 
 /*
  *  Data types
@@ -63,6 +69,15 @@ struct ship{
     cell_t **posicao;
 };
 typedef struct ship ship_t;
+
+struct ship_specs{
+    int points;
+    int width;
+    int fleet_of;
+    ship_t *ship_ptr;
+    char name[BUFF_S];
+};
+typedef struct ship_specs ship_specs_t;
 
 struct game{
     ship_t *torpedeiro;
@@ -95,6 +110,8 @@ extern player_t *all_players;
  *  Functions declarations
  */
 game_t *game_setup(void);
+
+void get_ship_specs(ship_specs_t*, game_t*, cell_t);
 
 void deploy_units(cell_t, game_t*);
 
