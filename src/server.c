@@ -32,6 +32,7 @@
 #include <errno.h>
 #include "signal_handler.h"
 #include "battleship.h"
+#include "stack.h"
 
 /*
  *  Global constants
@@ -113,6 +114,7 @@ int main(int argc, char *argv[]){
     listen(specs.sock, PENDING);
     pthread_create(&close_thr, NULL, close_socket, &specs.sock);
 
+    stack_up(MAX_PLAYERS);
     specs.game = game_setup();
 
     all_players = malloc(sizeof *all_players);
@@ -140,6 +142,8 @@ int main(int argc, char *argv[]){
     game_broadcast("Server down\n");
 
     close(specs.sock);
+
+    stack_destroy();
     specs.game = game_cleanup(specs.game);
 
     pthread_mutex_destroy(&counter_lock);
@@ -156,6 +160,7 @@ int main(int argc, char *argv[]){
  */
 void *listener(void *info){
     int tmp;
+    char *sorry;
     socklen_t length;
     player_t *player;
     info_t *specs = (info_t *)info;
@@ -166,6 +171,15 @@ void *listener(void *info){
         tmp = accept(specs->sock, (struct sockaddr *)&specs->addr, &length);
         if( ! run_Forrest_run ) break;
         if( tmp < 0 ) continue;
+
+        if( stack_empty() ){
+            sorry = "Numero maximo de conexoes atingido, sorry\n";
+            write(tmp, sorry, strlen(sorry));
+
+            close(tmp);
+
+            continue;
+        }
 
         player = malloc(sizeof *player);
 
@@ -179,7 +193,7 @@ void *listener(void *info){
         all_players->prev = player;
 
         pthread_mutex_lock(&counter_lock);
-        player->id = connect_c + 1;
+        player->id = stack_pop();
 
         if( pthread_create(&player->thread, NULL, connect_client, player) ){
             close(player->socket);
@@ -228,6 +242,7 @@ void *connect_client(void *player){
 
     me->next->prev = me->prev;
     me->prev->next = me->next;
+    stack_push(me->id);
     free(me);
 
     connect_c--;
