@@ -56,7 +56,7 @@ void deploy_units(cell_t ship, game_t *game){
     int width;
     int size;
     struct timeval precision;
-    navio_t *boat;
+    ship_t *boat;
 
     gettimeofday(&precision, NULL);
     srand((precision.tv_sec) + (precision.tv_usec));
@@ -159,7 +159,7 @@ game_t *game_cleanup(game_t *game){
 
 void finish_units(cell_t ship, game_t *game){
     int size;
-    navio_t *boat;
+    ship_t *boat;
 
     switch(ship){
         case torpedo:
@@ -199,7 +199,7 @@ void game_fire(int x, int y, player_t *player){
     char n_round[buff_s];
     bool check_ships = true;
     cell_t target;
-    navio_t *ship;
+    ship_t *ship;
     player_t *next;
 
     memset(buffer, 0, buff_s);
@@ -275,11 +275,11 @@ void game_fire(int x, int y, player_t *player){
     return;
 }
 
-int is_sink(navio_t *ship, int size, int width){
+int is_sink(ship_t *ship, int size, int width){
     int c;
     int points = 0;
     cell_t *pos = NULL;
-    navio_t *head = NULL;
+    ship_t *head = NULL;
 
     for( int n_ship = 0; n_ship < size; n_ship++ ){
         if( ship[n_ship].sink )

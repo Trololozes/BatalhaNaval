@@ -49,18 +49,18 @@ enum celula{
 };
 typedef enum celula cell_t;
 
-struct navio{
+struct ship{
     int points;
     bool sink;
     cell_t **posicao;
 };
-typedef struct navio navio_t;
+typedef struct ship ship_t;
 
 struct jogo{
-    navio_t *torpedeiro;
-    navio_t *porta_aviao;
-    navio_t *submarino;
-    navio_t *couracado;
+    ship_t *torpedeiro;
+    ship_t *porta_aviao;
+    ship_t *submarino;
+    ship_t *couracado;
     cell_t grid[ORDEM][ORDEM];
 };
 typedef struct jogo game_t;
@@ -93,7 +93,7 @@ void finish_units(cell_t, game_t*);
 
 void game_fire(int, int, player_t*);
 
-int is_sink(navio_t*, int, int);
+int is_sink(ship_t*, int, int);
 
 void game_end(void);
 
