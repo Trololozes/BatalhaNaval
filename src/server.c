@@ -77,14 +77,13 @@ void *connect_client(void*);
  *  Main definition
  */
 int main(int argc, char *argv[]){
-    const int buff_s = 20;
-    char first_player[buff_s];
+    char first_player[BUFF_S];
     struct sockaddr_in serv_addr;
     pthread_t close_thr;
     pthread_t listen_thr;
     info_t specs;
 
-    memset(first_player, 0, buff_s);
+    memset(first_player, 0, BUFF_S);
 
     pthread_mutex_init(&counter_lock, NULL);
     pthread_cond_init(&timeout_cond, NULL);
@@ -217,25 +216,23 @@ void *listener(void *info){
 }
 
 void *connect_client(void *player){
-    const int size = 2048;
     int linha;
     int coluna;
     int read_len;
-    char msg_in[size];
-    char msg_out[size];
+    char msg[BUFF_S];
     player_t *me = (player_t *)player;
 
-    sprintf(msg_out, "Connection Successfull!!\n"
+    sprintf(msg, "Connection Successfull!!\n"
         "You are Player#%d\n", me->id);
-    write(me->socket, msg_out, strlen(msg_out));
-    memset(msg_out, 0, size);
+    write(me->socket, msg, strlen(msg));
+    memset(msg, 0, BUFF_S);
 
-    while( (read_len = recv(me->socket, msg_in, size, 0)) > 0 ){
-        sscanf(msg_in, "%d*%d", &linha, &coluna);
+    while( (read_len = recv(me->socket, msg, BUFF_S, 0)) > 0 ){
+        sscanf(msg, "%d*%d", &linha, &coluna);
 
         game_fire(linha, coluna, me);
 
-        memset(msg_in, 0, size);
+        memset(msg, 0, BUFF_S);
     }
 
     pthread_mutex_lock(&counter_lock);

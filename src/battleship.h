@@ -28,6 +28,8 @@
 /*
  *  Global constants
  */
+#define BUFF_S 256
+
 #define ORDEM 100
 #define MAX_PLAYERS 50
 #define MAX_PLAYERS_SHOTS 20

@@ -197,20 +197,19 @@ void finish_units(cell_t ship, game_t *game){
 }
 
 void game_fire(int x, int y, player_t *player){
-    const int buff_s = 256;
     int size;
     int width;
     int points;
     int kill_switch = 0;
-    char buffer[buff_s];
-    char n_round[buff_s];
+    char buffer[BUFF_S];
+    char n_round[BUFF_S];
     bool check_ships = true;
     cell_t target;
     ship_t *ship;
     player_t *next;
 
-    memset(buffer, 0, buff_s);
-    memset(n_round, 0, buff_s);
+    memset(buffer, 0, BUFF_S);
+    memset(n_round, 0, BUFF_S);
 
     points = 0;
 
@@ -221,35 +220,35 @@ void game_fire(int x, int y, player_t *player){
 
     switch(target){
         case torpedo:
-            strncat(buffer, "Torpedeiro!", buff_s);
+            strncat(buffer, "Torpedeiro!", BUFF_S);
             size = TOR_N;
             width = TOR_W;
             ship = player->game->torpedeiro;
             break;
         case carrier:
-            strncat(buffer, "Porta-Avioes!", buff_s);
+            strncat(buffer, "Porta-Avioes!", BUFF_S);
             size = PAV_N;
             width = PAV_W;
             ship = player->game->porta_aviao;
             break;
         case submarine:
-            strncat(buffer, "Submarino!", buff_s);;
+            strncat(buffer, "Submarino!", BUFF_S);;
             size = SUB_N;
             width = SUB_W;
             ship = player->game->submarino;
             break;
         case battleship:
-            strncat(buffer, "Couracado!", buff_s);
+            strncat(buffer, "Couracado!", BUFF_S);
             size = COU_N;
             width = COU_W;
             ship = player->game->couracado;
             break;
         case water:
-            strncat(buffer, "Splash!", buff_s);
+            strncat(buffer, "Splash!", BUFF_S);
             check_ships = false;
             break;
         case hit:
-            strncat(buffer, "Nope, aqui ja foi atacado antes", buff_s);
+            strncat(buffer, "Nope, aqui ja foi atacado antes", BUFF_S);
             check_ships = false;
             break;
     }
@@ -270,12 +269,12 @@ void game_fire(int x, int y, player_t *player){
         if( (points = is_sink(ship, size, width)) )
             deployed_ships--;
 
-        strncat(buffer, ( points ) ? " - Afundado!" : " - Atingido!", buff_s);
+        strncat(buffer, ( points ) ? " - Afundado!" : " - Atingido!", BUFF_S);
         player->pontos += points;
         next = player;
     }
 
-    strncat(buffer, "\n", buff_s);
+    strncat(buffer, "\n", BUFF_S);
     game_broadcast(buffer);
 
     if( ! deployed_ships || kill_switch == 2 ){
@@ -323,17 +322,16 @@ int is_sink(ship_t *ship, int size, int width){
 }
 
 void game_end(void){
-    const int buff_s = 256;
-    char buffer[buff_s];
-    char msg[buff_s];
+    char buffer[BUFF_S];
+    char msg[BUFF_S];
 
-    memset(msg, 0, buff_s);
+    memset(msg, 0, BUFF_S);
 
     for( player_t *play = all_players->next; play->id != 0; play = play->next ){
-        memset(buffer, 0, buff_s);
+        memset(buffer, 0, BUFF_S);
 
         sprintf(buffer, "Player#%d -> %d pontos\n", play->id, play->pontos);
-        strncat(msg, buffer, buff_s);
+        strncat(msg, buffer, BUFF_S);
     }
 
     game_broadcast(msg);

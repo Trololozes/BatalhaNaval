@@ -35,6 +35,7 @@
  *  Global constants
  */
 #define PORT 5824
+#define BUFF_S 256
 
 /*
  *  External global variables
@@ -46,7 +47,6 @@ pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 /*
  *  Global variables within this file
  */
-static const int size = 256;
 static pthread_mutex_t send_lock;
 static pthread_cond_t send_cond;
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
     int read_len;
     int id = 0;
     int turn = 0;
-    char buff[size];
+    char buff[BUFF_S];
     char *ip;
     struct sockaddr_in serv_addr;
     pthread_t thread;
@@ -100,12 +100,12 @@ int main(int argc, char *argv[]){
     pthread_create(&thread, NULL, close_socket, &sock);
     pthread_create(&thread, NULL, outgoing_msgs, &sock);
 
-    memset(buff, 0, size);
-    while( (read_len = recv(sock, buff, size, 0)) > 0 ){
+    memset(buff, 0, BUFF_S);
+    while( (read_len = recv(sock, buff, BUFF_S, 0)) > 0 ){
         sscanf(buff, "%*[^#]#%d", ( ! id ) ? &id : &turn);
 
         fputs(buff, stdout);
-        memset(buff, 0, size);
+        memset(buff, 0, BUFF_S);
 
         if( turn == id ){
             pthread_mutex_lock(&send_lock);
@@ -129,7 +129,7 @@ void *outgoing_msgs(void *sock){
     int l_sock = *(int *)sock;
     int linha;
     int coluna;
-    char buff[size];
+    char buff[BUFF_S];
     char tmp[10];
 
     while( run_Forrest_run ){
@@ -149,7 +149,7 @@ void *outgoing_msgs(void *sock){
         sprintf(buff, "%d*%d", linha, coluna);
 
         send(l_sock, buff, strlen(buff), 0);
-        memset(buff, 0, size);
+        memset(buff, 0, BUFF_S);
 
         pthread_mutex_unlock(&send_lock);
     }
