@@ -173,7 +173,7 @@ void *listener(void *info){
 
         if( stack_empty() ){
             sorry = "Numero maximo de conexoes atingido, sorry\n";
-            write(tmp, sorry, strlen(sorry));
+            send(tmp, sorry, strlen(sorry), 0);
 
             close(tmp);
 
@@ -223,7 +223,7 @@ void *connect_client(void *player){
 
     sprintf(msg, "Connection Successfull!!\n"
         "You are Player#%d\n", me->id);
-    write(me->socket, msg, strlen(msg));
+    send(me->socket, msg, strlen(msg), 0);
     memset(msg, 0, BUFF_S);
 
     while( (read_len = recv(me->socket, msg, BUFF_S, 0)) > 0 ){

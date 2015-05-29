@@ -301,5 +301,5 @@ void game_end(void){
 
 void game_broadcast(char *msg){
     for( player_t *play = all_players->next; play->id != 0; play = play->next )
-        write(play->socket, msg, strlen(msg));
+        send(play->socket, msg, strlen(msg), 0);
 }
