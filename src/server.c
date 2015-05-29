@@ -100,13 +100,12 @@ int main(int argc, char *argv[]){
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
     if( (specs.sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
-        perror("socket() error\n");
-        perror(strerror(errno));
+        fprintf(stderr, "socket: %s\n", strerror(errno));
     }
 
     if( bind(specs.sock, (struct sockaddr *)&serv_addr, sizeof serv_addr) < 0 ){
-        perror("bind() error\n");
-        perror(strerror(errno));
+        fprintf(stderr, "bind(): %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     listen(specs.sock, PENDING);

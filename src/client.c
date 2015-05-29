@@ -90,13 +90,12 @@ int main(int argc, char *argv[]){
     serv_addr.sin_addr.s_addr = inet_addr(ip);
 
     if( (sock = socket(AF_INET, SOCK_STREAM, 0)) < 0 ){
-        perror("socket() error\n");
-        perror(strerror(errno));
+        fprintf(stderr, "socket: %s\n", strerror(errno));
     }
 
     if( connect(sock, (struct sockaddr *)&serv_addr, sizeof serv_addr) < 0 ){
-        perror("connect() error\n");
-        perror(strerror(errno));
+        fprintf(stderr, "connect(): %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     pthread_create(&close_thr, NULL, close_socket, &sock);
