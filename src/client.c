@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
@@ -66,7 +67,8 @@ int main(int argc, char *argv[]){
     char buff[BUFF_S];
     char *ip;
     struct sockaddr_in serv_addr;
-    pthread_t thread;
+    pthread_t close_thr;
+    pthread_t input_thr;
 
     if( argc != 2 ){
         fprintf(stderr, "Usage: %s [HOST]\n", argv[0]);
@@ -97,8 +99,8 @@ int main(int argc, char *argv[]){
         perror(strerror(errno));
     }
 
-    pthread_create(&thread, NULL, close_socket, &sock);
-    pthread_create(&thread, NULL, outgoing_msgs, &sock);
+    pthread_create(&close_thr, NULL, close_socket, &sock);
+    pthread_create(&input_thr, NULL, outgoing_msgs, &sock);
 
     memset(buff, 0, BUFF_S);
     while( (read_len = recv(sock, buff, BUFF_S, 0)) > 0 ){
@@ -113,6 +115,10 @@ int main(int argc, char *argv[]){
             pthread_mutex_unlock(&send_lock);
         }
     }
+
+    close(sock);
+    pthread_cancel(input_thr);
+    pthread_cancel(close_thr);
 
     pthread_mutex_destroy(&send_lock);
     pthread_cond_destroy(&send_cond);
