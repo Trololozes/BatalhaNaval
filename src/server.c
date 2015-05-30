@@ -125,18 +125,20 @@ int main(int argc, char *argv[]){
         sleep(15);
 
         if( connect_c )
-            game_broadcast("Aguardando jogadores...\n");
+            game_broadcast("-- Aguardando jogadores...\n");
     }
 
-    game_broadcast("Shall we play a game?\n");
-    sprintf(first_player, "Turno: Player#%d\n", all_players->next->id);
+    game_broadcast("-- Shall we play a game?\n");
+    sprintf(first_player, "== Player#%d (Pontuacao: %d | Tiros: %d)\n",\
+        all_players->next->id, all_players->next->pontos,\
+        all_players->next->tiros);
     game_broadcast(first_player);
 
     pthread_barrier_wait(&end_game_bar);
 
     pthread_cancel(close_thr);
 
-    game_broadcast("Server desligando... Fim de jogo!\n");
+    game_broadcast("-- Server desligando... Fim de jogo!\n");
 
     close(specs.sock);
 
@@ -170,7 +172,7 @@ void *listener(void *info){
         if( tmp < 0 ) continue;
 
         if( stack_empty() ){
-            sorry = "Numero maximo de conexoes atingido, sorry\n";
+            sorry = "-- Numero maximo de conexoes atingido, sorry\n";
             send(tmp, sorry, strlen(sorry), 0);
 
             close(tmp);
@@ -219,8 +221,8 @@ void *connect_client(void *player){
     char msg[BUFF_S];
     player_t *me = (player_t *)player;
 
-    sprintf(msg, "Connection Successfull!!\n"
-        "You are Player#%d\n", me->id);
+    sprintf(msg, "-- Connection Successfull!!\n"
+        "-- You are Player#%d\n", me->id);
     send(me->socket, msg, strlen(msg), 0);
     memset(msg, 0, BUFF_S);
 

@@ -57,6 +57,8 @@ void game_setup(void){
 }
 
 void get_ship_specs(ship_specs_t *specs, cell_t cell){
+    memset(specs->name, 0, BUFF_S);
+
     switch(cell){
         case torpedo:
             specs->points = TOR_P;
@@ -91,7 +93,6 @@ void get_ship_specs(ship_specs_t *specs, cell_t cell){
             specs->width = 0;;
             specs->fleet_of = 0;;
             specs->ship_ptr = NULL;
-            memset(specs->name, 0, BUFF_S);
             break;
     }
 }
@@ -202,13 +203,13 @@ void game_fire(int x, int y, player_t *player){
     game_ptr->grid[x][y] = hit;
     player->tiros--;
 
-    sprintf(buffer, "[%dx%d] -> ", x, y);
+    sprintf(buffer, "-- [%dx%d] -> ", x, y);
 
     get_ship_specs(&specs, target);
 
     switch(target){
         case hit:
-            strncat(buffer, "Ja dispararam aqui... entao,", BUFF_S);
+            strncat(buffer, "Ja dispararam aqui... entao, ", BUFF_S);
 
         case water:
             strncat(buffer, "Splash", BUFF_S);
@@ -245,8 +246,8 @@ void game_fire(int x, int y, player_t *player){
         return;
     }
 
-    sprintf(n_round, "Nova rodada - (Pontuacao: %d | Tiros: %d)Player#%d\n",\
-            next->pontos, next->tiros, next->id);
+    sprintf(n_round, "== Player#%d (Pontuacao: %d | Tiros: %d)\n",\
+            next->id, next->pontos, next->tiros);
     game_broadcast(n_round);
 
     return;
@@ -291,7 +292,7 @@ void game_end(void){
     for( player_t *play = all_players->next; play->id != 0; play = play->next ){
         memset(buffer, 0, BUFF_S);
 
-        sprintf(buffer, "Player#%d -> %d pontos\n", play->id, play->pontos);
+        sprintf(buffer, "-- Player#%d -> %d pontos\n", play->id, play->pontos);
         strncat(msg, buffer, BUFF_S);
     }
 
