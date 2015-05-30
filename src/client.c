@@ -24,6 +24,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <signal.h>
+#include <ncurses.h>
+#include <panel.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -46,6 +48,16 @@ pthread_mutex_t sock_kill_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t sock_kill_cond = PTHREAD_COND_INITIALIZER;
 
 /*
+ *  Data types
+ */
+struct out{
+    WINDOW *win;
+    PANEL *panel;
+    int socket;
+};
+typedef struct out out_t;
+
+/*
  *  Global variables within this file
  */
 static pthread_mutex_t send_lock;
@@ -61,7 +73,6 @@ void *outgoing_msgs(void*);
  */
 int main(int argc, char *argv[]){
     int sock;
-    int read_len;
     int id = 0;
     int turn = 0;
     char buff[BUFF_S];
@@ -69,6 +80,10 @@ int main(int argc, char *argv[]){
     struct sockaddr_in serv_addr;
     pthread_t close_thr;
     pthread_t input_thr;
+    WINDOW *outgoing;
+    WINDOW *incoming;
+    PANEL *out_panel;
+    out_t info;
 
     if( argc != 2 ){
         fprintf(stderr, "Usage: %s [HOST]\n", argv[0]);
@@ -98,14 +113,27 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
+    initscr();
+    nonl();
+    cbreak();
+
+    outgoing = newwin(5, COLS , LINES-5, 0);
+    out_panel = new_panel(outgoing);
+    incoming = newwin(LINES-5, COLS, 0, 0);
+    scrollok(incoming, TRUE);
+
+    info.win = outgoing;
+    info.panel = out_panel;
+    info.socket = sock;
+
     pthread_create(&close_thr, NULL, close_socket, &sock);
-    pthread_create(&input_thr, NULL, outgoing_msgs, &sock);
+    pthread_create(&input_thr, NULL, outgoing_msgs, &info);
 
     memset(buff, 0, BUFF_S);
-    while( (read_len = recv(sock, buff, BUFF_S, 0)) > 0 ){
-        sscanf(buff, "%*[^#]#%d", ( ! id ) ? &id : &turn);
+    while( recv(sock, buff, BUFF_S, 0) > 0 ){
+        waddstr(incoming, buff);
 
-        fputs(buff, stdout);
+        sscanf(buff, "%*[^#]#%d", ( ! id ) ? &id : &turn);
         memset(buff, 0, BUFF_S);
 
         if( turn == id ){
@@ -113,7 +141,11 @@ int main(int argc, char *argv[]){
             pthread_cond_broadcast(&send_cond);
             pthread_mutex_unlock(&send_lock);
         }
+
+        wrefresh(incoming);
     }
+
+    endwin();
 
     close(sock);
     pthread_cancel(input_thr);
@@ -130,31 +162,40 @@ int main(int argc, char *argv[]){
 /*
  *  Functions definitions
  */
-void *outgoing_msgs(void *sock){
-    int l_sock = *(int *)sock;
-    int linha;
-    int coluna;
+void *outgoing_msgs(void *out){
+    int xy[2];
     char buff[BUFF_S];
     char tmp[10];
+    char *lin_col[2];
+    out_t info = *(out_t *)out;
+
+    lin_col[0] = "Digite a linha [0-99]: ";
+    lin_col[1] = "Digite a coluna [0-99]: ";
 
     while( run_Forrest_run ){
         pthread_mutex_lock(&send_lock);
         pthread_cond_wait(&send_cond, &send_lock);
 
-        puts("Digite a linha [0-99]:");
-        fgets(tmp, 10, stdin);
-        sscanf(tmp, "%d\n", &linha);
-        memset(tmp, 0, 10);
+        box(info.win, 0, 0);
+        show_panel(info.panel);
 
-        puts("Digite a coluna [0-99]:");
-        fgets(tmp, 10, stdin);
-        sscanf(tmp, "%d\n", &coluna);
-        memset(tmp, 0, 10);
+        for( int i = 0; i < 2; i++ ){
+            mvwaddstr(info.win, 2, 1, lin_col[i]);
+            wgetnstr(info.win, tmp, 10);
+            sscanf(tmp, "%d\n", &xy[i]);
+            memset(tmp, 0, 10);
+        }
 
-        sprintf(buff, "%d*%d", linha, coluna);
+        wclear(info.win);
 
-        send(l_sock, buff, strlen(buff), 0);
+        update_panels();
+        doupdate();
+
+        sprintf(buff, "%d*%d", xy[0], xy[1]);
+        send(info.socket, buff, strlen(buff), 0);
         memset(buff, 0, BUFF_S);
+
+        hide_panel(info.panel);
 
         pthread_mutex_unlock(&send_lock);
     }

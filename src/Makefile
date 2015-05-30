@@ -15,7 +15,7 @@ LFLAGS =
 # define any libraries to link into executable:
 # ie.: -lm -lmylib
 S_LIBS = -pthread
-C_LIBS = -pthread
+C_LIBS = -pthread -lpanel -lncurses
 
 # define the C source files
 S_SRC = server.c signal_handler.c battleship.c stack.c
