@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <ncurses.h>
 #include <panel.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -81,8 +82,13 @@ int main(int argc, char *argv[]){
     pthread_t close_thr;
     pthread_t input_thr;
     WINDOW *outgoing;
-    WINDOW *incoming;
+    WINDOW *in_stats;
+    WINDOW *in_turn;
     PANEL *out_panel;
+    regex_t re_stat;
+    regex_t re_turn;
+    regmatch_t m_stat;
+    regmatch_t m_turn;
     out_t info;
 
     if( argc != 2 ){
@@ -98,6 +104,9 @@ int main(int argc, char *argv[]){
     pthread_mutex_init(&sock_kill_lock, NULL);
     pthread_cond_init(&sock_kill_cond, NULL);
     signal(SIGINT, sighandler);
+
+    regcomp(&re_stat, "^[><-]{2}[^=]*\n", REG_EXTENDED);
+    regcomp(&re_turn, "==[^><-]*\n", REG_EXTENDED);
 
     memset(&serv_addr, 0, sizeof serv_addr);
     serv_addr.sin_family = AF_INET;
@@ -117,10 +126,11 @@ int main(int argc, char *argv[]){
     nonl();
     cbreak();
 
-    outgoing = newwin(5, COLS , LINES-5, 0);
+    outgoing = newwin(3, COLS , LINES-3, 0);
     out_panel = new_panel(outgoing);
-    incoming = newwin(LINES-5, COLS, 0, 0);
-    scrollok(incoming, TRUE);
+    in_turn = newwin(1, COLS, LINES-4, 0);
+    in_stats = newwin(LINES-4, COLS, 0, 0);
+    scrollok(in_stats, TRUE);
 
     info.win = outgoing;
     info.panel = out_panel;
@@ -131,7 +141,12 @@ int main(int argc, char *argv[]){
 
     memset(buff, 0, BUFF_S);
     while( recv(sock, buff, BUFF_S, 0) > 0 ){
-        waddstr(incoming, buff);
+        if( ! regexec(&re_stat, buff, 1, &m_stat, 0) )
+            waddnstr(in_stats, buff+m_stat.rm_so, m_stat.rm_eo-m_stat.rm_so);
+        if( ! regexec(&re_turn, buff, 1, &m_turn, 0) ){
+            wclear(in_turn);
+            waddnstr(in_turn, buff+m_turn.rm_so, m_turn.rm_eo-m_turn.rm_so);
+        }
 
         sscanf(buff, "%*[^#]#%d", ( ! id ) ? &id : &turn);
         memset(buff, 0, BUFF_S);
@@ -142,7 +157,9 @@ int main(int argc, char *argv[]){
             pthread_mutex_unlock(&send_lock);
         }
 
-        wrefresh(incoming);
+        wnoutrefresh(in_turn);
+        wnoutrefresh(in_stats);
+        doupdate();
     }
 
     endwin();
@@ -150,6 +167,9 @@ int main(int argc, char *argv[]){
     close(sock);
     pthread_cancel(input_thr);
     pthread_cancel(close_thr);
+
+    regfree(&re_stat);
+    regfree(&re_turn);
 
     pthread_mutex_destroy(&send_lock);
     pthread_cond_destroy(&send_cond);
@@ -176,20 +196,20 @@ void *outgoing_msgs(void *out){
         pthread_mutex_lock(&send_lock);
         pthread_cond_wait(&send_cond, &send_lock);
 
-        box(info.win, 0, 0);
         show_panel(info.panel);
 
         for( int i = 0; i < 2; i++ ){
-            mvwaddstr(info.win, 2, 1, lin_col[i]);
+            box(info.win, 0, 0);
+
+            mvwaddstr(info.win, 1, 1, lin_col[i]);
             wgetnstr(info.win, tmp, 10);
             sscanf(tmp, "%d\n", &xy[i]);
             memset(tmp, 0, 10);
+
+            wclear(info.win);
+            update_panels();
+            doupdate();
         }
-
-        wclear(info.win);
-
-        update_panels();
-        doupdate();
 
         sprintf(buff, "%d*%d", xy[0], xy[1]);
         send(info.socket, buff, strlen(buff), 0);
