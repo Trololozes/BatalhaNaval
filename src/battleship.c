@@ -285,18 +285,13 @@ int is_sink(ship_t *ship, int size, int width){
 
 void game_end(void){
     char buffer[BUFF_S];
-    char msg[BUFF_S];
-
-    memset(msg, 0, BUFF_S);
 
     for( player_t *play = all_players->next; play->id != 0; play = play->next ){
         memset(buffer, 0, BUFF_S);
 
         sprintf(buffer, "-- Player#%d -> %d pontos\n", play->id, play->pontos);
-        strncat(msg, buffer, BUFF_S);
+        game_broadcast(buffer);
     }
-
-    game_broadcast(msg);
 }
 
 void game_broadcast(char *msg){

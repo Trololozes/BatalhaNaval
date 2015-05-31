@@ -28,7 +28,7 @@
 /*
  *  Global constants
  */
-#define BUFF_S 2048
+#define BUFF_S 256
 
 #define ORDEM 100
 #define MAX_PLAYERS 50
