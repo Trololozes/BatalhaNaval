@@ -196,6 +196,7 @@ void *outgoing_msgs(void *out){
         pthread_mutex_lock(&send_lock);
         pthread_cond_wait(&send_cond, &send_lock);
 
+        flushinp();
         show_panel(info.panel);
 
         for( int i = 0; i < 2; i++ ){
