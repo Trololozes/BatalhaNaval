@@ -162,8 +162,6 @@ int main(int argc, char *argv[]){
         doupdate();
     }
 
-    endwin();
-
     close(sock);
     pthread_cancel(input_thr);
     pthread_cancel(close_thr);
@@ -175,6 +173,13 @@ int main(int argc, char *argv[]){
     pthread_cond_destroy(&send_cond);
     pthread_mutex_destroy(&sock_kill_lock);
     pthread_cond_destroy(&sock_kill_cond);
+
+    box(outgoing, 0, 0);
+    mvwaddstr(outgoing, 1, 1, "Aperte qualquer tecla para sair...");
+    wgetch(outgoing);
+    update_panels();
+    doupdate();
+    endwin();
 
     exit(EXIT_SUCCESS);
 }
