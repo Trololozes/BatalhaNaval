@@ -64,22 +64,24 @@ enum cell{
 typedef enum cell cell_t;
 
 struct ship{
-    int points;
+    cell_t type;
     bool sink;
+    int points;
+    int width;
+    int fleet_of;
+    char name[BUFF_S];
     cell_t **posicao;
 };
 typedef struct ship ship_t;
 
 struct ship_specs{
-    int points;
-    int width;
-    int fleet_of;
+    ship_t proto;
     ship_t *ship_ptr;
-    char name[BUFF_S];
 };
 typedef struct ship_specs ship_specs_t;
 
 struct game{
+    int total_ships;
     ship_t *torpedeiro;
     ship_t *porta_aviao;
     ship_t *submarino;
@@ -115,7 +117,9 @@ void get_ship_specs(ship_specs_t*, cell_t);
 
 void deploy_units(cell_t);
 
-cell_t **place_on_grid(cell_t, int, cell_t*);
+cell_t **place_on_grid(ship_t*, cell_t*);
+
+int first_jump(void);
 
 void game_cleanup(void);
 
@@ -123,7 +127,9 @@ void finish_units(cell_t);
 
 void game_fire(int, int, player_t*);
 
-int is_sink(ship_t*, int, int);
+int is_sink(ship_t*);
+
+player_t *next_player(player_t*);
 
 void game_end(void);
 

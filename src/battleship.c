@@ -28,11 +28,6 @@
 #include "battleship.h"
 
 /*
- *  Global variable within this file
- */
-static int deployed_ships = COU_N + SUB_N + PAV_N + TOR_N;
-
-/*
  *  Functions definitions
  */
 void game_setup(void){
@@ -41,6 +36,8 @@ void game_setup(void){
     game_ptr->porta_aviao = calloc(PAV_N, sizeof *game_ptr->porta_aviao);
     game_ptr->submarino = calloc(SUB_N, sizeof *game_ptr->submarino);
     game_ptr->couracado = calloc(COU_N, sizeof *game_ptr->couracado);
+
+    game_ptr->total_ships = COU_N + SUB_N + PAV_N + TOR_N;
 
     for( int i = 0; i < ORDEM; i++ ){
         for( int j = 0; j < ORDEM; j++ ){
@@ -52,92 +49,87 @@ void game_setup(void){
     deploy_units(carrier);
     deploy_units(submarine);
     deploy_units(battleship);
+
+    return;
 }
 
-void get_ship_specs(ship_specs_t *specs, cell_t cell){
-    memset(specs->name, 0, BUFF_S);
+void get_ship_specs(ship_specs_t *model, cell_t type){
+    memset(model->proto.name, 0, BUFF_S);
 
-    switch(cell){
+    switch(type){
         case torpedo:
-            specs->points = TOR_P;
-            specs->width = TOR_W;
-            specs->fleet_of = TOR_N;
-            specs->ship_ptr = game_ptr->torpedeiro;
-            sprintf(specs->name, "Torpedeiro!");
+            model->proto.points = TOR_P;
+            model->proto.width = TOR_W;
+            model->proto.fleet_of = TOR_N;
+            sprintf(model->proto.name, "Torpedeiro!");
+            model->ship_ptr = game_ptr->torpedeiro;
             break;
         case carrier:
-            specs->points = PAV_P;
-            specs->width = PAV_W;
-            specs->fleet_of = PAV_N;
-            specs->ship_ptr = game_ptr->porta_aviao;
-            sprintf(specs->name, "Porta Avioes!");
+            model->proto.points = PAV_P;
+            model->proto.width = PAV_W;
+            model->proto.fleet_of = PAV_N;
+            sprintf(model->proto.name, "Porta Avioes!");
+            model->ship_ptr = game_ptr->porta_aviao;
             break;
         case submarine:
-            specs->points = SUB_P;
-            specs->width = SUB_W;
-            specs->fleet_of = SUB_N;
-            specs->ship_ptr = game_ptr->submarino;
-            sprintf(specs->name, "Submarino!");
+            model->proto.points = SUB_P;
+            model->proto.width = SUB_W;
+            model->proto.fleet_of = SUB_N;
+            sprintf(model->proto.name, "Submarino!");
+            model->ship_ptr = game_ptr->submarino;
             break;
         case battleship:
-            specs->points = COU_P;
-            specs->width = COU_W;
-            specs->fleet_of = COU_N;
-            specs->ship_ptr = game_ptr->couracado;
-            sprintf(specs->name, "Couracado!");
+            model->proto.points = COU_P;
+            model->proto.width = COU_W;
+            model->proto.fleet_of = COU_N;
+            sprintf(model->proto.name, "Couracado!");
+            model->ship_ptr = game_ptr->couracado;
             break;
         default:
-            specs->points = 0;;
-            specs->width = 0;;
-            specs->fleet_of = 0;;
-            specs->ship_ptr = NULL;
             break;
     }
+
+    return;
 }
 
 void deploy_units(cell_t ship){
     struct timeval precision;
-    ship_specs_t specs;
+    ship_specs_t model;
 
     gettimeofday(&precision, NULL);
     srand((precision.tv_sec) + (precision.tv_usec));
     rand();
 
-    get_ship_specs(&specs, ship);
+    get_ship_specs(&model, ship);
 
-    for( int i = 0; i < specs.fleet_of; i++ ){
-        specs.ship_ptr[i].points = specs.points;
-        specs.ship_ptr[i].sink = false;
-        specs.ship_ptr[i].posicao = \
-            place_on_grid(ship, specs.width, &(game_ptr->grid[0][0]));
+    for( int i = 0; i < model.proto.fleet_of; i++ ){
+        model.ship_ptr[i].type = ship;
+        model.ship_ptr[i].sink = false;
+        model.ship_ptr[i].points = model.proto.points;
+        model.ship_ptr[i].width = model.proto.width;
+        model.ship_ptr[i].fleet_of = model.proto.fleet_of;
+        strncpy(model.ship_ptr[i].name, model.proto.name, BUFF_S);
+        model.ship_ptr[i].posicao = \
+            place_on_grid(&model.ship_ptr[i], &(game_ptr->grid[0][0]));
     }
+
+    return;
 }
 
-cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
-    int x;
-    int y;
+cell_t **place_on_grid(ship_t *ship, cell_t *grid){
     int c = 0;
     int jump;
-    bool from_start = true;
-    cell_t *try;
-    cell_t **pos = calloc(width, sizeof *pos);
+    cell_t *try = NULL;
+    cell_t **pos = calloc(ship->width, sizeof *pos);
 
     jump = ( rand() % 2 ) ? 1 : ORDEM;
 
-    while( c < width ){
-        if( from_start ){
-            x = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
-            y = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
-            try = grid + x + y * ORDEM;
-            from_start = false;
-        }
-        else{
-            try += jump;
-        }
+    while( c < ship->width ){
+        try = ( ! try ) ? grid + first_jump() : try + jump;
 
         if( *try != water ){
             c = 0;
-            from_start = true;
+            try = NULL;
             continue;
         }
 
@@ -145,11 +137,19 @@ cell_t **place_on_grid(cell_t ship, int width, cell_t *grid){
         c++;
     }
 
-    for( int i = 0; i < width; i++ )
-        *(pos[i]) = ship;
+    for( int i = 0; i < ship->width; i++ )
+        *(pos[i]) = ship->type;
 
     return pos;
 }
+
+int first_jump(void){
+    int x = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
+    int y = ORDEM + rand() / (RAND_MAX / (0 - ORDEM + 1) + 1);
+
+    return x + y * ORDEM;
+}
+
 
 void game_cleanup(void){
     finish_units(torpedo);
@@ -168,8 +168,9 @@ void game_cleanup(void){
     game_ptr->couracado = NULL;
 
     free(game_ptr);
-
     game_ptr = NULL;
+
+    return;
 }
 
 void finish_units(cell_t ship){
@@ -177,25 +178,28 @@ void finish_units(cell_t ship){
 
     get_ship_specs(&specs, ship);
 
-    for( int i = 0; i < specs.fleet_of; i++ ){
-        specs.ship_ptr[i].points = 0;;
+    for( int i = 0; i < specs.proto.fleet_of; i++ ){
+        specs.ship_ptr[i].type = ship;
         specs.ship_ptr[i].sink = false;
+        specs.ship_ptr[i].points = 0;
+        specs.ship_ptr[i].width = 0;
+        specs.ship_ptr[i].fleet_of = 0;
+        memset(specs.ship_ptr[i].name, 0, BUFF_S);
         free(specs.ship_ptr[i].posicao);
         specs.ship_ptr[i].posicao = NULL;
     }
+
+    return;
 }
 
 void game_fire(int x, int y, player_t *player){
-    int points;
-    int kill_switch = 0;
+    int pontos;
     char buffer[BUFF_S];
-    char n_round[BUFF_S];
     cell_t target;
-    player_t *next;
-    ship_specs_t specs;
+    player_t *next = NULL;
+    ship_t *ship = NULL;
 
     memset(buffer, 0, BUFF_S);
-    memset(n_round, 0, BUFF_S);
 
     target = game_ptr->grid[x][y];
     game_ptr->grid[x][y] = hit;
@@ -203,82 +207,92 @@ void game_fire(int x, int y, player_t *player){
 
     sprintf(buffer, "-- [%dx%d] -> ", x, y);
 
-    get_ship_specs(&specs, target);
-
     switch(target){
         case hit:
             strncat(buffer, "Ja dispararam aqui... entao, ", BUFF_S);
-
         case water:
             strncat(buffer, "Splash", BUFF_S);
-
-            do{
-                if( player->next == player_0 ){
-                    next = player_0->next;
-                    kill_switch++;
-                }
-                else{
-                    next = player->next;
-                }
-            }while( next->tiros == 0 && kill_switch < 2 );
             break;
-
-        default:
-            if( (points = is_sink(specs.ship_ptr, specs.fleet_of, specs.width)) )
-                deployed_ships--;
-
-            strncat(buffer, specs.name, BUFF_S);
-            strncat(buffer, (points) ? " - Afundado!" : " - Atingido!", BUFF_S);
-            player->pontos += points;
-            next = player;
+        case torpedo:
+            ship = game_ptr->torpedeiro;
+            break;
+        case carrier:
+            ship = game_ptr->porta_aviao;
+            break;
+        case submarine:
+            ship = game_ptr->submarino;
+            break;
+        case battleship:
+            ship = game_ptr->couracado;
             break;
     }
+
+    if( ship ){
+        pontos = is_sink(ship);
+        strncat(buffer, ship->name, BUFF_S);
+        strncat(buffer, (pontos) ? " - Afundado!" : " - Atingido!", BUFF_S);
+        player->pontos += pontos;
+        next = player;
+    }
+
+    if( ! next )
+        next = next_player(player);
 
     strncat(buffer, "\n", BUFF_S);
     game_broadcast(buffer);
 
-    if( ! deployed_ships || kill_switch == 2 ){
+    if( ! ( game_ptr->total_ships && next ) ){
         game_end();
-        pthread_barrier_wait(&end_game_bar);
-
         return;
     }
 
-    sprintf(n_round, "== Player#%d (Pontuacao: %d | Tiros: %d)\n",\
+    memset(buffer, 0, BUFF_S);
+    sprintf(buffer, "== Player#%d (Pontuacao: %d | Tiros: %d)\n",\
             next->id, next->pontos, next->tiros);
-    game_broadcast(n_round);
+    game_broadcast(buffer);
 
     return;
 }
 
-int is_sink(ship_t *ship, int size, int width){
+int is_sink(ship_t *ship){
     int c;
-    int points = 0;
     cell_t *pos = NULL;
     ship_t *head = NULL;
 
-    for( int n_ship = 0; n_ship < size; n_ship++ ){
+    for( int n_ship = 0; n_ship < ship->fleet_of; n_ship++ ){
         if( ship[n_ship].sink )
             continue;
 
         c = 0;
-
         pos = *ship[n_ship].posicao;
         head = ship + n_ship;
 
-        for( int ship_w = 0; ship_w < width; ship_w++ ){
+        for( int ship_w = 0; ship_w < ship->width; ship_w++ ){
             if( pos[ship_w] == hit )
                 c++;
         }
 
-        if( c == width ){
+        if( c == ship->width ){
+            game_ptr->total_ships -= 1;
             head->sink = true;
-            points = head->points;
-            break;
+            return head->points;
         }
     }
 
-    return points;
+    return 0;
+}
+
+player_t *next_player(player_t *current){
+    player_t *next = current->next;
+
+    while( next != current ){
+        if( next->tiros )
+            return next;
+
+        next = next->next;
+    }
+
+    return NULL;
 }
 
 void game_end(void){
@@ -290,9 +304,14 @@ void game_end(void){
         sprintf(buffer, "-- Player#%d -> %d pontos\n", play->id, play->pontos);
         game_broadcast(buffer);
     }
+
+    pthread_barrier_wait(&end_game_bar);
+    return;
 }
 
 void game_broadcast(char *msg){
     for( player_t *play = player_0->next; play != player_0; play = play->next )
         send(play->socket, msg, strlen(msg), 0);
+
+    return;
 }
