@@ -103,7 +103,7 @@ typedef struct player player_t;
  *  External global variables
  */
 extern pthread_barrier_t end_game_bar;
-extern player_t *all_players;
+extern player_t *player_0;
 extern game_t *game_ptr;
 
 /*

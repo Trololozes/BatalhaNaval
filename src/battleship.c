@@ -36,19 +36,17 @@ static int deployed_ships = COU_N + SUB_N + PAV_N + TOR_N;
  *  Functions definitions
  */
 void game_setup(void){
-    game_t *game = malloc(sizeof *game);
-    game->torpedeiro = calloc(TOR_N, sizeof *game->torpedeiro);
-    game->porta_aviao = calloc(PAV_N, sizeof *game->porta_aviao);
-    game->submarino = calloc(SUB_N, sizeof *game->submarino);
-    game->couracado = calloc(COU_N, sizeof *game->couracado);
+    game_ptr = malloc(sizeof *game_ptr);
+    game_ptr->torpedeiro = calloc(TOR_N, sizeof *game_ptr->torpedeiro);
+    game_ptr->porta_aviao = calloc(PAV_N, sizeof *game_ptr->porta_aviao);
+    game_ptr->submarino = calloc(SUB_N, sizeof *game_ptr->submarino);
+    game_ptr->couracado = calloc(COU_N, sizeof *game_ptr->couracado);
 
     for( int i = 0; i < ORDEM; i++ ){
         for( int j = 0; j < ORDEM; j++ ){
-            game->grid[i][j] = water;
+            game_ptr->grid[i][j] = water;
         }
     }
-
-    game_ptr = game;
 
     deploy_units(torpedo);
     deploy_units(carrier);
@@ -215,8 +213,8 @@ void game_fire(int x, int y, player_t *player){
             strncat(buffer, "Splash", BUFF_S);
 
             do{
-                if( player->next->id == 0 ){
-                    next = player->next->next;
+                if( player->next == player_0 ){
+                    next = player_0->next;
                     kill_switch++;
                 }
                 else{
@@ -286,7 +284,7 @@ int is_sink(ship_t *ship, int size, int width){
 void game_end(void){
     char buffer[BUFF_S];
 
-    for( player_t *play = all_players->next; play->id != 0; play = play->next ){
+    for( player_t *play = player_0->next; play != player_0; play = play->next ){
         memset(buffer, 0, BUFF_S);
 
         sprintf(buffer, "-- Player#%d -> %d pontos\n", play->id, play->pontos);
@@ -295,6 +293,6 @@ void game_end(void){
 }
 
 void game_broadcast(char *msg){
-    for( player_t *play = all_players->next; play->id != 0; play = play->next )
+    for( player_t *play = player_0->next; play != player_0; play = play->next )
         send(play->socket, msg, strlen(msg), 0);
 }

@@ -46,7 +46,7 @@ bool run_Forrest_run = true;
 pthread_mutex_t sock_kill_lock;
 pthread_cond_t sock_kill_cond;
 pthread_barrier_t end_game_bar;
-player_t *all_players = NULL;
+player_t *player_0 = NULL;
 game_t *game_ptr = NULL;
 
 /*
@@ -114,10 +114,10 @@ int main(int argc, char *argv[]){
     stack_up(MAX_PLAYERS);
     game_setup();
 
-    all_players = malloc(sizeof *all_players);
-    all_players->id = 0;
-    all_players->next = all_players;
-    all_players->prev = all_players;
+    player_0 = malloc(sizeof *player_0);
+    player_0->id = 0;
+    player_0->next = player_0;
+    player_0->prev = player_0;
 
     pthread_create(&listen_thr, NULL, listener, &specs);
 
@@ -130,8 +130,8 @@ int main(int argc, char *argv[]){
 
     game_broadcast("-- Shall we play a game?\n");
     sprintf(first_player, "== Player#%d (Pontuacao: %d | Tiros: %d)\n",\
-        all_players->next->id, all_players->next->pontos,\
-        all_players->next->tiros);
+        player_0->next->id, player_0->next->pontos,\
+        player_0->next->tiros);
     game_broadcast(first_player);
 
     pthread_barrier_wait(&end_game_bar);
@@ -186,10 +186,10 @@ void *listener(void *info){
         player->pontos = 0;
         player->socket = tmp;
 
-        player->prev = all_players->prev;
-        player->next = all_players;
-        all_players->prev->next = player;
-        all_players->prev = player;
+        player->prev = player_0->prev;
+        player->next = player_0;
+        player_0->prev->next = player;
+        player_0->prev = player;
 
         pthread_mutex_lock(&counter_lock);
         player->id = stack_pop();
