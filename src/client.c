@@ -123,8 +123,11 @@ int main(int argc, char *argv[]){
     }
 
     initscr();
+    start_color();
     nonl();
     cbreak();
+
+    init_pair(1, COLOR_BLACK, COLOR_RED);
 
     outgoing = newwin(3, COLS , LINES-3, 0);
     out_panel = new_panel(outgoing);
@@ -193,6 +196,7 @@ void *outgoing_msgs(void *out){
     char tmp[5];
     char *lin_col[2];
     char *end;
+    bool repeat = false;
     out_t info = *(out_t *)out;
 
     lin_col[0] = "Digite a linha [0-99]: ";
@@ -208,6 +212,12 @@ void *outgoing_msgs(void *out){
         for( int i = 0; i < 2; i++ ){
             memset(tmp, 0, 5);
 
+            wattroff(info.win, COLOR_PAIR(1));
+            if( repeat ){
+                repeat = false;
+                wattron(info.win, COLOR_PAIR(1));
+            }
+
             wclear(info.win);
             box(info.win, 0, 0);
 
@@ -215,8 +225,8 @@ void *outgoing_msgs(void *out){
             wgetnstr(info.win, tmp, 5);
             xy[i] = strtol(tmp, &end, 10);
             if( tmp == end || *end != 0 || xy[i] < 0 || xy[i] > 99 ){
+                repeat = true;
                 i--;
-                continue;
             }
 
             update_panels();
