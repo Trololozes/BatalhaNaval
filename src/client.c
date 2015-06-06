@@ -190,8 +190,9 @@ int main(int argc, char *argv[]){
 void *outgoing_msgs(void *out){
     int xy[2];
     char buff[BUFF_S];
-    char tmp[10];
+    char tmp[5];
     char *lin_col[2];
+    char *end;
     out_t info = *(out_t *)out;
 
     lin_col[0] = "Digite a linha [0-99]: ";
@@ -205,14 +206,19 @@ void *outgoing_msgs(void *out){
         show_panel(info.panel);
 
         for( int i = 0; i < 2; i++ ){
+            memset(tmp, 0, 5);
+
+            wclear(info.win);
             box(info.win, 0, 0);
 
             mvwaddstr(info.win, 1, 1, lin_col[i]);
-            wgetnstr(info.win, tmp, 10);
-            sscanf(tmp, "%d\n", &xy[i]);
-            memset(tmp, 0, 10);
+            wgetnstr(info.win, tmp, 5);
+            xy[i] = strtol(tmp, &end, 10);
+            if( tmp == end || *end != 0 || xy[i] < 0 || xy[i] > 99 ){
+                i--;
+                continue;
+            }
 
-            wclear(info.win);
             update_panels();
             doupdate();
         }
