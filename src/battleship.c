@@ -192,7 +192,7 @@ void finish_units(cell_t ship){
     return;
 }
 
-void game_fire(int x, int y, player_t *player){
+player_t *game_fire(int x, int y, player_t *player){
     int pontos;
     char buffer[BUFF_S];
     cell_t target;
@@ -243,7 +243,7 @@ void game_fire(int x, int y, player_t *player){
 
     if( ! ( game_ptr->total_ships && next ) ){
         game_end();
-        return;
+        return NULL;
     }
 
     memset(buffer, 0, BUFF_S);
@@ -251,7 +251,7 @@ void game_fire(int x, int y, player_t *player){
             next->id, next->pontos, next->tiros);
     game_broadcast(buffer);
 
-    return;
+    return next;
 }
 
 int is_sink(ship_t *ship){

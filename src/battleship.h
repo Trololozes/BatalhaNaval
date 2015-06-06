@@ -125,7 +125,7 @@ void game_cleanup(void);
 
 void finish_units(cell_t);
 
-void game_fire(int, int, player_t*);
+player_t *game_fire(int, int, player_t*);
 
 int is_sink(ship_t*);
 

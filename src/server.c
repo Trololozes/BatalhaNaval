@@ -62,6 +62,7 @@ typedef struct local_info local_info_t;
  *  Global variables within this file
  */
 static volatile int connect_c = 0;
+static volatile player_t *current = NULL;
 static pthread_mutex_t counter_lock;
 static pthread_mutex_t timeout_lock;
 static pthread_cond_t timeout_cond;
@@ -132,6 +133,7 @@ int main(int argc, char *argv[]){
     sprintf(first_player, "== Player#%d (Pontuacao: %d | Tiros: %d)\n",\
         player_0->next->id, player_0->next->pontos,\
         player_0->next->tiros);
+    current = player_0->next;
     game_broadcast(first_player);
 
     pthread_barrier_wait(&end_game_bar);
@@ -229,7 +231,8 @@ void *connect_client(void *player){
     while( (read_len = recv(me->socket, msg, BUFF_S, 0)) > 0 ){
         sscanf(msg, "%d*%d", &linha, &coluna);
 
-        game_fire(linha, coluna, me);
+        if( current == me )
+            current = game_fire(linha, coluna, me);
 
         memset(msg, 0, BUFF_S);
     }
