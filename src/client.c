@@ -59,15 +59,9 @@ struct out{
 typedef struct out out_t;
 
 /*
- *  Global variables within this file
- */
-static pthread_mutex_t send_lock;
-static pthread_cond_t send_cond;
-
-/*
  *  Functions declarations
  */
-void *outgoing_msgs(void*);
+void outgoing_msgs(out_t*);
 
 /*
  *  Main definition
@@ -80,7 +74,6 @@ int main(int argc, char *argv[]){
     char *ip;
     struct sockaddr_in serv_addr;
     pthread_t close_thr;
-    pthread_t input_thr;
     WINDOW *outgoing;
     WINDOW *in_stats;
     WINDOW *in_turn;
@@ -97,9 +90,6 @@ int main(int argc, char *argv[]){
     }
 
     ip = argv[1];
-
-    pthread_mutex_init(&send_lock, NULL);
-    pthread_cond_init(&send_cond, NULL);
 
     pthread_mutex_init(&sock_kill_lock, NULL);
     pthread_cond_init(&sock_kill_cond, NULL);
@@ -140,7 +130,6 @@ int main(int argc, char *argv[]){
     info.socket = sock;
 
     pthread_create(&close_thr, NULL, close_socket, &sock);
-    pthread_create(&input_thr, NULL, outgoing_msgs, &info);
 
     memset(buff, 0, BUFF_S);
     while( recv(sock, buff, BUFF_S, 0) > 0 ){
@@ -155,9 +144,7 @@ int main(int argc, char *argv[]){
         memset(buff, 0, BUFF_S);
 
         if( turn == id ){
-            pthread_mutex_lock(&send_lock);
-            pthread_cond_broadcast(&send_cond);
-            pthread_mutex_unlock(&send_lock);
+            outgoing_msgs(&info);
         }
 
         wnoutrefresh(in_turn);
@@ -166,14 +153,11 @@ int main(int argc, char *argv[]){
     }
 
     close(sock);
-    pthread_cancel(input_thr);
     pthread_cancel(close_thr);
 
     regfree(&re_stat);
     regfree(&re_turn);
 
-    pthread_mutex_destroy(&send_lock);
-    pthread_cond_destroy(&send_cond);
     pthread_mutex_destroy(&sock_kill_lock);
     pthread_cond_destroy(&sock_kill_cond);
 
@@ -190,57 +174,49 @@ int main(int argc, char *argv[]){
 /*
  *  Functions definitions
  */
-void *outgoing_msgs(void *out){
+void outgoing_msgs(out_t *info){
     int xy[2];
     char buff[BUFF_S];
     char tmp[5];
     char *lin_col[2];
     char *end;
     bool repeat = false;
-    out_t info = *(out_t *)out;
 
     lin_col[0] = "Digite a linha [0-99]: ";
     lin_col[1] = "Digite a coluna [0-99]: ";
 
-    while( run_Forrest_run ){
-        pthread_mutex_lock(&send_lock);
-        pthread_cond_wait(&send_cond, &send_lock);
+    flushinp();
+    show_panel(info->panel);
 
-        flushinp();
-        show_panel(info.panel);
+    for( int i = 0; i < 2; i++ ){
+        memset(tmp, 0, 5);
 
-        for( int i = 0; i < 2; i++ ){
-            memset(tmp, 0, 5);
-
-            wattroff(info.win, COLOR_PAIR(1));
-            if( repeat ){
-                repeat = false;
-                wattron(info.win, COLOR_PAIR(1));
-            }
-
-            wclear(info.win);
-            box(info.win, 0, 0);
-
-            mvwaddstr(info.win, 1, 1, lin_col[i]);
-            wgetnstr(info.win, tmp, 5);
-            xy[i] = strtol(tmp, &end, 10);
-            if( tmp == end || *end != 0 || xy[i] < 0 || xy[i] > 99 ){
-                repeat = true;
-                i--;
-            }
-
-            update_panels();
-            doupdate();
+        wattroff(info->win, COLOR_PAIR(1));
+        if( repeat ){
+            repeat = false;
+            wattron(info->win, COLOR_PAIR(1));
         }
 
-        sprintf(buff, "%d*%d", xy[0], xy[1]);
-        send(info.socket, buff, strlen(buff), 0);
-        memset(buff, 0, BUFF_S);
+        wclear(info->win);
+        box(info->win, 0, 0);
 
-        hide_panel(info.panel);
+        mvwaddstr(info->win, 1, 1, lin_col[i]);
+        wgetnstr(info->win, tmp, 5);
+        xy[i] = strtol(tmp, &end, 10);
+        if( tmp == end || *end != 0 || xy[i] < 0 || xy[i] > 99 ){
+            repeat = true;
+            i--;
+        }
 
-        pthread_mutex_unlock(&send_lock);
+        update_panels();
+        doupdate();
     }
 
-    return 0;
+    sprintf(buff, "%d*%d", xy[0], xy[1]);
+    send(info->socket, buff, strlen(buff), 0);
+    memset(buff, 0, BUFF_S);
+
+    hide_panel(info->panel);
+
+    return;
 }
