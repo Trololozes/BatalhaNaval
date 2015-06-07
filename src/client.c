@@ -129,6 +129,9 @@ int main(int argc, char *argv[]){
     info.panel = out_panel;
     info.socket = sock;
 
+    hide_panel(out_panel);
+    update_panels();
+
     pthread_create(&close_thr, NULL, close_socket, &sock);
 
     memset(buff, 0, BUFF_S);
@@ -143,12 +146,14 @@ int main(int argc, char *argv[]){
         sscanf(buff, "%*[^#]#%d", ( ! id ) ? &id : &turn);
         memset(buff, 0, BUFF_S);
 
-        if( turn == id ){
-            outgoing_msgs(&info);
-        }
-
         wnoutrefresh(in_turn);
         wnoutrefresh(in_stats);
+
+        if( turn == id ){
+            outgoing_msgs(&info);
+            update_panels();
+        }
+
         doupdate();
     }
 
@@ -207,9 +212,6 @@ void outgoing_msgs(out_t *info){
             repeat = true;
             i--;
         }
-
-        update_panels();
-        doupdate();
     }
 
     sprintf(buff, "%d*%d", xy[0], xy[1]);
