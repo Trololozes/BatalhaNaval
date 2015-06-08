@@ -61,7 +61,7 @@ typedef struct out out_t;
 /*
  *  Functions declarations
  */
-void outgoing_msgs(out_t*);
+void send_xy(out_t*);
 
 /*
  *  Main definition
@@ -149,10 +149,8 @@ int main(int argc, char *argv[]){
         wnoutrefresh(in_turn);
         wnoutrefresh(in_stats);
 
-        if( turn == id ){
-            outgoing_msgs(&info);
-            update_panels();
-        }
+        if( turn == id )
+            send_xy(&info);
 
         doupdate();
     }
@@ -179,13 +177,13 @@ int main(int argc, char *argv[]){
 /*
  *  Functions definitions
  */
-void outgoing_msgs(out_t *info){
+void send_xy(out_t *info){
     int xy[2];
     char buff[BUFF_S];
     char tmp[5];
     char *lin_col[2];
     char *end;
-    bool repeat = false;
+    int (*attr_ch)(WINDOW*, int);
 
     lin_col[0] = "Digite a linha [0-99]: ";
     lin_col[1] = "Digite a coluna [0-99]: ";
@@ -194,24 +192,22 @@ void outgoing_msgs(out_t *info){
     show_panel(info->panel);
 
     for( int i = 0; i < 2; i++ ){
-        memset(tmp, 0, 5);
+        attr_ch = wattroff;
 
-        wattroff(info->win, COLOR_PAIR(1));
-        if( repeat ){
-            repeat = false;
-            wattron(info->win, COLOR_PAIR(1));
-        }
+        do{
+            attr_ch(info->win, COLOR_PAIR(1));
 
-        wclear(info->win);
-        box(info->win, 0, 0);
+            memset(tmp, 0, 5);
 
-        mvwaddstr(info->win, 1, 1, lin_col[i]);
-        wgetnstr(info->win, tmp, 5);
-        xy[i] = strtol(tmp, &end, 10);
-        if( tmp == end || *end != 0 || xy[i] < 0 || xy[i] > 99 ){
-            repeat = true;
-            i--;
-        }
+            wclear(info->win);
+            box(info->win, 0, 0);
+
+            mvwaddstr(info->win, 1, 1, lin_col[i]);
+            wgetnstr(info->win, tmp, 5);
+            xy[i] = strtol(tmp, &end, 10);
+
+            attr_ch = wattron;
+        }while( tmp == end || *end != 0 || xy[i] < 0 || xy[i] > 99 );
     }
 
     sprintf(buff, "%d*%d", xy[0], xy[1]);
@@ -219,6 +215,7 @@ void outgoing_msgs(out_t *info){
     memset(buff, 0, BUFF_S);
 
     hide_panel(info->panel);
+    update_panels();
 
     return;
 }
