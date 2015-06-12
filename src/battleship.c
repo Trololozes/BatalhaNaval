@@ -292,6 +292,9 @@ player_t *next_player(player_t *current){
         next = next->next;
     }
 
+    if( next->tiros )
+        return next;
+
     return NULL;
 }
 
