@@ -29,6 +29,7 @@
  *  Global constants
  */
 #define BUFF_S 256
+#define NAME 15
 
 #define ORDEM 100
 #define MAX_PLAYERS 50
@@ -68,17 +69,11 @@ struct ship{
     bool sink;
     int points;
     int width;
-    int fleet_of;
-    char name[BUFF_S];
+    char name[NAME];
     cell_t **posicao;
+    struct ship *next;
 };
 typedef struct ship ship_t;
-
-struct ship_specs{
-    ship_t proto;
-    ship_t *ship_ptr;
-};
-typedef struct ship_specs ship_specs_t;
 
 struct game{
     int total_ships;
@@ -113,17 +108,15 @@ extern game_t *game_ptr;
  */
 void game_setup(void);
 
-void get_ship_specs(ship_specs_t*, cell_t);
+ship_t *deploy_units(cell_t, int);
 
-void deploy_units(cell_t);
-
-cell_t **place_on_grid(ship_t*, cell_t*);
+void place_on_grid(int, cell_t, cell_t**);
 
 int first_jump(void);
 
 void game_cleanup(void);
 
-void finish_units(cell_t);
+void finish_units(ship_t*);
 
 player_t *game_fire(int, int, player_t*);
 
